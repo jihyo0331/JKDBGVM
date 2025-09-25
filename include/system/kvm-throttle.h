@@ -12,6 +12,10 @@ typedef struct ThrottleCfg {
     int64_t  window_start_ns;
     int64_t  window_end_ns;
     int64_t  on_ns;          // period_ns * percent / 100
+    int64_t  budget_ns;      // 남은 실행 가능 시간(ns)
+    int64_t  last_check_ns;  // 모노토닉 기준 마지막 점검 시각
+    int64_t  thread_last_ns; // CLOCK_THREAD_CPUTIME_ID 기준 마지막 측정치
+    bool     thread_time_valid;
     QEMUTimer *on_timer;
 } ThrottleCfg;
 
