@@ -31,6 +31,7 @@
 #include "qapi/qapi-commands-misc.h"
 #include "qapi/qapi-events-run-state.h"
 #include "qapi/qmp/qerror.h"
+#include "qapi/util.h"
 #include "exec/gdbstub.h"
 #include "exec/target_page.h"
 #include "accel/accel-cpu-ops.h"
@@ -77,20 +78,6 @@ static QemuMutex bql;
  * The chosen accelerator is supposed to register this.
  */
 static const AccelOpsClass *cpus_accel;
-
-static char *mem_bytes_to_hex(const uint8_t *buf, size_t len)
-{
-    static const char hex[] = "0123456789abcdef";
-    char *out = g_malloc(len * 2 + 1);
-
-    for (size_t i = 0; i < len; i++) {
-        out[i * 2] = hex[buf[i] >> 4];
-        out[i * 2 + 1] = hex[buf[i] & 0xf];
-    }
-
-    out[len * 2] = '\0';
-    return out;
-}
 
 bool cpu_is_stopped(CPUState *cpu)
 {
@@ -894,12 +881,21 @@ PhysMemPageList *qmp_query_phys_pages(uint64_t addr, bool has_num_pages,
         hwaddr cur = addr + (hwaddr)i * page_size;
         PhysMemPage *page = g_new0(PhysMemPage, 1);
         PhysMemPageList *node = g_new0(PhysMemPageList, 1);
+        strList **rows_tail;
 
         cpu_physical_memory_read(cur, buf, page_size);
 
         page->address = cur;
         page->page_size = page_size;
-        page->data = mem_bytes_to_hex(buf, page_size);
+        rows_tail = &page->rows;
+
+        for (size_t off = 0; off < page_size; off++) {
+            hwaddr entry_addr = cur + off;
+            char *line = g_strdup_printf("0x%016" PRIx64 " - 0x%02x",
+                                         (uint64_t)entry_addr, buf[off]);
+
+            QAPI_LIST_APPEND(rows_tail, line);
+        }
 
         node->value = page;
         if (tail) {

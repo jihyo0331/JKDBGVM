@@ -859,11 +859,11 @@
 #
 # @address: start physical address of the page
 #
-# @page-size: number of bytes contained in @data (currently the target page
-#     size)
+# @page-size: number of bytes contained in this page (currently the target
+#     page size)
 #
-# @data: page contents encoded as a lowercase hexadecimal string (two
-#     characters per byte)
+# @rows: list of strings, each formatted as "ADDRESS - VALUE" (hex), where
+#     VALUE is a single byte from that address
 #
 # Since: 9.1
 ##
@@ -871,7 +871,7 @@
   'data': {
     'address': 'uint64',
     'page-size': 'size',
-    'data': 'str' } }
+    'rows': ['str'] } }
 
 ##
 # @query-phys-pages:
@@ -884,7 +884,8 @@
 #     The implementation clamps requests above 64 pages.
 #
 # Returns: A list of @PhysMemPage entries describing each requested page in
-#     ascending address order.
+#     ascending address order. Each page contains per-byte "ADDRESS - VALUE"
+#     rows encoded as hexadecimal strings.
 #
 # Since: 9.1
 ##

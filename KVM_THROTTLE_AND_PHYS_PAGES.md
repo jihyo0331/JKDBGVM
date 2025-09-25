@@ -29,25 +29,24 @@
 ## 3. 페이지 단위 물리 메모리 QMP 명령
 ### 3.1 QAPI 확장 (`qapi/machine.json`)
 - `PhysMemPage` 구조체와 `query-phys-pages` 명령을 정의했습니다. 기본 요청은 1페이지이며 최대 64페이지로 클램프합니다.
-- 각 페이지는 시작 물리 주소, 페이지 크기, 그리고 16진수 문자열 데이터(바이트당 2문자)를 포함합니다.
+- 각 페이지는 시작 물리 주소, 페이지 크기와 함께 "주소 - 값" 형식의 문자열 리스트(`rows`)를 제공합니다.
 
 ### 3.2 명령 처리기 (`system/cpus.c`)
-1. 헬퍼 `mem_bytes_to_hex()`로 바이트 버퍼를 소문자 16진수 문자열로 변환합니다.
+1. 페이지 버퍼를 읽은 뒤 각 바이트를 `"주소 - 값"` 포맷 문자열로 변환하기 위해 QAPI의 `strList`를 채웁니다.
 2. `qmp_query_phys_pages()`에서는 입력 검증을 수행합니다.
    - `num-pages`가 0이면 에러.
    - 타겟 페이지 크기(`TARGET_PAGE_SIZE`)가 0이거나 비정렬이면 에러.
    - 시작 주소 정렬 여부, 범위 오버플로(`addr + size`)를 검사합니다.
-3. 요청한 페이지 수만큼 반복하며 `cpu_physical_memory_read()`로 내용을 읽고, `PhysMemPageList` 노드를 구성해 반환합니다.
+3. 요청한 페이지 수만큼 반복하며 `cpu_physical_memory_read()`로 내용을 읽고, 각 바이트마다 `StrList`에 `"0x%016PRIx64 - 0x%02x"` 형태의 문자열을 추가한 뒤 `PhysMemPageList` 노드를 구성해 반환합니다.
 4. 페이지 수는 `QMP_QUERY_PHYS_PAGES_MAX`(64)로 제한해 QMP 응답 크기를 관리합니다.
 
 ### 3.3 사용 예시
 ```json
 { "execute": "query-phys-pages", "arguments": { "addr": 4096, "num-pages": 2 } }
 ```
-- 응답은 두 개의 `PhysMemPage` 항목을 포함하며, 각 `data` 필드는 4KB라면 8192 글자의 16진수 문자열입니다.
+- 응답의 `rows` 배열에는 각 바이트가 `"0x0000000000001000 - 0xff"`와 같은 한 줄 문자열로 담겨 있습니다.
 - 더 큰 덤프가 필요할 경우 이 명령을 반복 호출해 페이지 단위로 이어 붙입니다.
 
 ## 4. 빌드 및 활용 메모
 1. QAPI 스키마 변경 후에는 `meson setup build` (또는 기존 빌드 디렉터리)에서 `ninja -C build qapi-gen`을 실행해 생성 파일을 갱신합니다.
 2. 전체 빌드 후 KVM 게스트를 실행하여 스로틀 비율별 CPU 사용률과 `query-phys-pages` 명령 응답을 확인하세요.
-
