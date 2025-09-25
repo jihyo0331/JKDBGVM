@@ -27,10 +27,12 @@
 #include "qemu/coroutine-tls.h"
 #include "qapi/error.h"
 #include "qapi/qapi-commands-machine.h"
+#include "qapi/qapi-types-machine.h"
 #include "qapi/qapi-commands-misc.h"
 #include "qapi/qapi-events-run-state.h"
 #include "qapi/qmp/qerror.h"
 #include "exec/gdbstub.h"
+#include "exec/target_page.h"
 #include "accel/accel-cpu-ops.h"
 #include "system/hw_accel.h"
 #include "exec/cpu-common.h"
@@ -66,6 +68,8 @@
 
 #endif /* CONFIG_LINUX */
 
+#define QMP_QUERY_PHYS_PAGES_MAX 64
+
 /* The Big QEMU Lock (BQL) */
 static QemuMutex bql;
 
@@ -73,6 +77,20 @@ static QemuMutex bql;
  * The chosen accelerator is supposed to register this.
  */
 static const AccelOpsClass *cpus_accel;
+
+static char *mem_bytes_to_hex(const uint8_t *buf, size_t len)
+{
+    static const char hex[] = "0123456789abcdef";
+    char *out = g_malloc(len * 2 + 1);
+
+    for (size_t i = 0; i < len; i++) {
+        out[i * 2] = hex[buf[i] >> 4];
+        out[i * 2 + 1] = hex[buf[i] & 0xf];
+    }
+
+    out[len * 2] = '\0';
+    return out;
+}
 
 bool cpu_is_stopped(CPUState *cpu)
 {
@@ -823,6 +841,79 @@ int vm_stop_force_state(RunState state)
     }
 }
 
+PhysMemPageList *qmp_query_phys_pages(uint64_t addr, bool has_num_pages,
+                                      uint16_t num_pages, Error **errp)
+{
+    uint16_t requested = has_num_pages ? num_pages : 1;
+    const size_t page_size = TARGET_PAGE_SIZE;
+    uint64_t page_mask;
+    PhysMemPageList *head = NULL;
+    PhysMemPageList *tail = NULL;
+    uint8_t *buf;
+
+    if (!requested) {
+        error_setg(errp, "num-pages must be greater than zero");
+        return NULL;
+    }
+
+    if (page_size == 0) {
+        error_setg(errp, "invalid target page size");
+        return NULL;
+    }
+
+    page_mask = page_size - 1;
+    if (page_size & page_mask) {
+        error_setg(errp, "invalid target page size");
+        return NULL;
+    }
+
+    if (addr & page_mask) {
+        error_setg(errp,
+                   "addr 0x%" PRIx64 " must be aligned to 0x%" PRIx64,
+                   addr, (uint64_t)page_size);
+        return NULL;
+    }
+
+    if (requested > QMP_QUERY_PHYS_PAGES_MAX) {
+        requested = QMP_QUERY_PHYS_PAGES_MAX;
+    }
+
+    if (page_size > UINT64_MAX / requested) {
+        error_setg(errp, "requested range too large");
+        return NULL;
+    }
+
+    if (addr > UINT64_MAX - ((uint64_t)page_size * requested - 1)) {
+        error_setg(errp, "addr + length would overflow uint64_t");
+        return NULL;
+    }
+
+    buf = g_malloc(page_size);
+
+    for (uint16_t i = 0; i < requested; i++) {
+        hwaddr cur = addr + (hwaddr)i * page_size;
+        PhysMemPage *page = g_new0(PhysMemPage, 1);
+        PhysMemPageList *node = g_new0(PhysMemPageList, 1);
+
+        cpu_physical_memory_read(cur, buf, page_size);
+
+        page->address = cur;
+        page->page_size = page_size;
+        page->data = mem_bytes_to_hex(buf, page_size);
+
+        node->value = page;
+        if (tail) {
+            tail->next = node;
+        } else {
+            head = node;
+        }
+        tail = node;
+    }
+
+    g_free(buf);
+    return head;
+}
+
 void qmp_memsave(uint64_t addr, uint64_t size, const char *filename,
                  bool has_cpu, int64_t cpu_index, Error **errp)
 {
@@ -906,4 +997,3 @@ void qmp_inject_nmi(Error **errp)
 {
     nmi_monitor_handle(monitor_get_cpu_index(monitor_cur()), errp);
 }
-

@@ -853,6 +853,48 @@
     'filename': 'str' } }
 
 ##
+# @PhysMemPage:
+#
+# Single guest physical memory page returned by @query-phys-pages.
+#
+# @address: start physical address of the page
+#
+# @page-size: number of bytes contained in @data (currently the target page
+#     size)
+#
+# @data: page contents encoded as a lowercase hexadecimal string (two
+#     characters per byte)
+#
+# Since: 9.1
+##
+{ 'struct': 'PhysMemPage',
+  'data': {
+    'address': 'uint64',
+    'page-size': 'size',
+    'data': 'str' } }
+
+##
+# @query-phys-pages:
+#
+# Return guest physical memory in page-granular chunks.
+#
+# @addr: starting guest physical address (must be page aligned)
+#
+# @num-pages: optional number of consecutive pages to read (defaults to 1).
+#     The implementation clamps requests above 64 pages.
+#
+# Returns: A list of @PhysMemPage entries describing each requested page in
+#     ascending address order.
+#
+# Since: 9.1
+##
+{ 'command': 'query-phys-pages',
+  'data': {
+    'addr': 'uint64',
+    '*num-pages': 'uint16' },
+  'returns': ['PhysMemPage'] }
+
+##
 # @Memdev:
 #
 # Information about memory backend
