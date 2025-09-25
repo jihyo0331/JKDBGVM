@@ -1,0 +1,409 @@
+name: Wheel Builder
+permissions:
+  contents: read
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The version to build
+  # Do not add any non-tag push events without updating pypi-publish.yml. If
+  # you do, it'll upload wheels to PyPI.
+  push:
+    tags:
+      - '*.*'
+      - '*.*.*'
+  pull_request:
+    paths:
+      - .github/workflows/wheel-builder.yml
+      - .github/requirements/**
+      - pyproject.toml
+      - vectors/pyproject.toml
+
+env:
+  BUILD_REQUIREMENTS_PATH: .github/requirements/build-requirements.txt
+  UV_REQUIREMENTS_PATH: .github/requirements/uv-requirements.txt
+
+jobs:
+  sdist:
+    runs-on: ubuntu-latest
+    name: sdists
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          # The tag to build or the tag received by the tag event
+          ref: ${{ github.event.inputs.version || github.ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "3.13"
+        timeout-minutes: 3
+      - run: python -m pip install -r $UV_REQUIREMENTS_PATH
+
+      - name: Make sdist (cryptography)
+        run: uv build --build-constraint=$BUILD_REQUIREMENTS_PATH --require-hashes --sdist
+      - name: Make sdist and wheel (vectors)
+        run: uv build --build-constraint=$BUILD_REQUIREMENTS_PATH --require-hashes vectors/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: "cryptography-sdist"
+          path: dist/cryptography*
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: "vectors-sdist-wheel"
+          path: vectors/dist/cryptography*
+
+  manylinux:
+    needs: [sdist]
+    runs-on: ${{ matrix.MANYLINUX.RUNNER }}
+    container:
+      image: ghcr.io/pyca/${{ matrix.MANYLINUX.CONTAINER }}
+      volumes:
+        - /staticnodehost:/staticnodecontainer:rw,rshared
+        - /staticnodehost/20:/__e/node20:ro,rshared
+        - /staticnodehost/24:/__e/node24:ro,rshared
+    strategy:
+      fail-fast: false
+      matrix:
+        PYTHON:
+          - { VERSION: "cp311-cp311", ABI_VERSION: 'py38' }
+          - { VERSION: "cp311-cp311", ABI_VERSION: 'py311' }
+          - { VERSION: "cp314-cp314t" }
+          - { VERSION: "pp311-pypy311_pp73" }
+        MANYLINUX:
+          - { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014:x86_64", RUNNER: "ubuntu-latest" }
+          - { NAME: "manylinux_2_28_x86_64", CONTAINER: "cryptography-manylinux_2_28:x86_64", RUNNER: "ubuntu-latest"}
+          - { NAME: "manylinux_2_34_x86_64", CONTAINER: "cryptography-manylinux_2_34:x86_64", RUNNER: "ubuntu-latest"}
+          - { NAME: "musllinux_1_2_x86_64", CONTAINER: "cryptography-musllinux_1_2:x86_64", RUNNER: "ubuntu-latest"}
+
+          - { NAME: "manylinux2014_aarch64", CONTAINER: "cryptography-manylinux2014_aarch64", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "manylinux_2_28_aarch64", CONTAINER: "cryptography-manylinux_2_28:aarch64", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "manylinux_2_34_aarch64", CONTAINER: "cryptography-manylinux_2_34:aarch64", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "musllinux_1_2_aarch64", CONTAINER: "cryptography-musllinux_1_2:aarch64", RUNNER: "ubuntu-24.04-arm" }
+
+          - { NAME: "manylinux_2_31_armv7l", CONTAINER: "cryptography-manylinux_2_31:armv7l", RUNNER: "ubuntu-24.04-arm" }
+
+          - { NAME: "manylinux_2_28_ppc64le", CONTAINER: "cryptography-manylinux_2_28:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
+          - { NAME: "manylinux_2_34_ppc64le", CONTAINER: "cryptography-manylinux_2_34:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
+
+        exclude:
+          # There are no readily available musllinux PyPy distributions
+          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+            MANYLINUX: { NAME: "musllinux_1_2_x86_64", CONTAINER: "cryptography-musllinux_1_2:x86_64", RUNNER: "ubuntu-latest"}
+          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+            MANYLINUX: { NAME: "musllinux_1_2_aarch64", CONTAINER: "cryptography-musllinux_1_2:aarch64", RUNNER: "ubuntu-24.04-arm" }
+
+            # We also don't build pypy wheels for anything except the latest manylinux
+          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+            MANYLINUX: { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014:x86_64", RUNNER: "ubuntu-latest"}
+          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+            MANYLINUX: { NAME: "manylinux2014_aarch64", CONTAINER: "cryptography-manylinux2014_aarch64", RUNNER: "ubuntu-24.04-arm" }
+
+          # No PyPy on armv7l either
+          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+            MANYLINUX: { NAME: "manylinux_2_31_armv7l", CONTAINER: "cryptography-manylinux_2_31:armv7l", RUNNER: "ubuntu-24.04-arm" }
+
+          # No PyPy on ppc64le
+          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+            MANYLINUX: { NAME: "manylinux_2_34_ppc64le", CONTAINER: "cryptography-manylinux_2_34:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
+          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+            MANYLINUX: { NAME: "manylinux_2_28_ppc64le", CONTAINER: "cryptography-manylinux_2_28:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
+
+    name: "${{ matrix.PYTHON.VERSION }} for ${{ matrix.MANYLINUX.NAME }}"
+    steps:
+      - name: Ridiculous-er workaround for static node20
+        run: |
+          cp -R /staticnode/* /staticnodecontainer/
+      - name: Ridiculous alpine workaround for actions support on arm64
+        run: |
+          # This modifies /etc/os-release so the JS actions
+          # from GH can't detect that it's on alpine:aarch64. It will
+          # then use a glibc nodejs, which works fine when gcompat
+          # is installed in the container (which it is)
+          sed -i "s:ID=alpine:ID=NotpineForGHA:" /etc/os-release
+        if: startsWith(matrix.MANYLINUX.NAME, 'musllinux') && endsWith(matrix.MANYLINUX.NAME, 'aarch64')
+
+      - name: Get build-requirements.txt from repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          # The tag to build or the tag received by the tag event
+          ref: ${{ github.event.inputs.version || github.ref }}
+          persist-credentials: false
+          sparse-checkout: |
+            ${{ env.BUILD_REQUIREMENTS_PATH }}
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: cryptography-sdist
+      - run: mkdir tmpwheelhouse
+      - name: Build the wheel
+        run: |
+          if [ -n "${{ matrix.PYTHON.ABI_VERSION }}" ]; then
+              PY_LIMITED_API="--config-settings=build-args=--features=pyo3/abi3-${{ matrix.PYTHON.ABI_VERSION }}"
+          fi
+
+          # The manylinux-entrypoint script accounts for uname issues, otherwise
+          # the platform tag on armv7 wheels might be tagged as aarch64 under
+          # docker running on an arm64 CPU
+          OPENSSL_DIR="/opt/pyca/cryptography/openssl" \
+              OPENSSL_STATIC=1 \
+              manylinux-entrypoint uv build --python=/opt/python/${{ matrix.PYTHON.VERSION }}/bin/python --wheel --require-hashes --build-constraint=$BUILD_REQUIREMENTS_PATH $PY_LIMITED_API cryptography*.tar.gz -o tmpwheelhouse/
+        env:
+          RUSTUP_HOME: /root/.rustup
+      - run: auditwheel repair --plat ${{ matrix.MANYLINUX.NAME }} tmpwheelhouse/cryptography*.whl -w wheelhouse/
+      - run: unzip wheelhouse/*.whl -d execstack.check
+      - run: |
+          results=$(readelf -lW execstack.check/cryptography/hazmat/bindings/*.so)
+          count=$(echo "$results" | grep -c 'GNU_STACK.*[R ][W ]E' || true)
+          if [ "$count" -ne 0 ]; then
+            exit 1
+          else
+            exit 0
+          fi
+
+      - run: uv venv --python=/opt/python/${{ matrix.PYTHON.VERSION }}/bin/python
+      - run: uv pip install --require-hashes -r $BUILD_REQUIREMENTS_PATH
+      - run: uv pip install cryptography --no-index -f wheelhouse/
+      - run: |
+          echo "from cryptography.hazmat.backends.openssl.backend import backend;print('Loaded: ' + backend.openssl_version_text());print('Linked Against: ' + backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode('ascii'))" | uv run -
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}-${{ matrix.PYTHON.ABI_VERSION }}"
+          path: wheelhouse/
+
+  macos:
+    needs: [sdist]
+    runs-on: macos-13
+    strategy:
+      fail-fast: false
+      matrix:
+        PYTHON:
+          - VERSION: '3.11'
+            ABI_VERSION: 'py38'
+            # Despite the name, this is built for the macOS 11 SDK on arm64 and 10.9+ on intel
+            DOWNLOAD_URL: 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg'
+            BIN_PATH: '/Library/Frameworks/Python.framework/Versions/3.11/bin/python3'
+            DEPLOYMENT_TARGET: '10.13'
+            # This archflags is default, but let's be explicit
+            ARCHFLAGS: '-arch x86_64 -arch arm64'
+            # See https://github.com/pypa/cibuildwheel/blob/c8876b5c54a6c6b08de5d4b1586906b56203bd9e/cibuildwheel/macos.py#L257-L269
+            # This will change in the future as we change the base Python we
+            # build against
+            _PYTHON_HOST_PLATFORM: 'macosx-10.9-universal2'
+          - VERSION: '3.11'
+            ABI_VERSION: 'py311'
+            # Despite the name, this is built for the macOS 11 SDK on arm64 and 10.9+ on intel
+            DOWNLOAD_URL: 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg'
+            BIN_PATH: '/Library/Frameworks/Python.framework/Versions/3.11/bin/python3'
+            DEPLOYMENT_TARGET: '10.13'
+            # This archflags is default, but let's be explicit
+            ARCHFLAGS: '-arch x86_64 -arch arm64'
+            # See https://github.com/pypa/cibuildwheel/blob/c8876b5c54a6c6b08de5d4b1586906b56203bd9e/cibuildwheel/macos.py#L257-L269
+            # This will change in the future as we change the base Python we
+            # build against
+            _PYTHON_HOST_PLATFORM: 'macosx-10.9-universal2'
+          - VERSION: '3.14t'
+            DOWNLOAD_URL: 'https://www.python.org/ftp/python/3.14.0/python-3.14.0rc2-macos11.pkg'
+            BIN_PATH: '/Library/Frameworks/PythonT.framework/Versions/3.14/bin/python3.14t'
+            DEPLOYMENT_TARGET: '10.13'
+            # This archflags is default, but let's be explicit
+            ARCHFLAGS: '-arch x86_64 -arch arm64'
+            # See https://github.com/pypa/cibuildwheel/blob/c8876b5c54a6c6b08de5d4b1586906b56203bd9e/cibuildwheel/macos.py#L257-L269
+            # This will change in the future as we change the base Python we
+            # build against
+            _PYTHON_HOST_PLATFORM: 'macosx-10.9-universal2'
+          - VERSION: 'pypy-3.10'
+            BIN_PATH: 'pypy3'
+            DEPLOYMENT_TARGET: '10.13'
+            _PYTHON_HOST_PLATFORM: 'macosx-10.9-x86_64'
+            ARCHFLAGS: '-arch x86_64'
+          - VERSION: 'pypy-3.11'
+            BIN_PATH: 'pypy3'
+            DEPLOYMENT_TARGET: '10.13'
+            _PYTHON_HOST_PLATFORM: 'macosx-10.9-x86_64'
+            ARCHFLAGS: '-arch x86_64'
+    name: "${{ matrix.PYTHON.VERSION }} ABI ${{ matrix.PYTHON.ABI_VERSION }} macOS ${{ matrix.PYTHON.ARCHFLAGS }}"
+    steps:
+      - name: Get build-requirements.txt from repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          # The tag to build or the tag received by the tag event
+          ref: ${{ github.event.inputs.version || github.ref }}
+          persist-credentials: false
+          sparse-checkout: |
+            ${{ env.BUILD_REQUIREMENTS_PATH }}
+            ${{ env.UV_REQUIREMENTS_PATH }}
+            .github/config/macos-pkg-choices-freethreaded.xml
+          sparse-checkout-cone-mode: false
+      - name: Setup python
+        run: |
+          curl --max-time 30 --retry 5 "$PYTHON_DOWNLOAD_URL" -o python.pkg
+          sudo installer -pkg python.pkg -target /
+        env:
+          PYTHON_DOWNLOAD_URL: ${{ matrix.PYTHON.DOWNLOAD_URL }}
+        if: contains(matrix.PYTHON.VERSION, 'pypy') == false && matrix.PYTHON.VERSION != '3.14t'
+      - name: Setup free-threaded python
+        run: |
+          curl --max-time 30 --retry 5 "$PYTHON_DOWNLOAD_URL" -o python.pkg
+          sudo installer -pkg python.pkg -applyChoiceChangesXML .github/config/macos-pkg-choices-freethreaded.xml -target /
+        env:
+          PYTHON_DOWNLOAD_URL: ${{ matrix.PYTHON.DOWNLOAD_URL }}
+        if: matrix.PYTHON.VERSION == '3.14t'
+      - name: Setup pypy
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: ${{ matrix.PYTHON.VERSION }}
+        if: contains(matrix.PYTHON.VERSION, 'pypy')
+      - uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        with:
+          repo: pyca/infra
+          workflow: build-macos-openssl.yml
+          branch: main
+          workflow_conclusion: success
+          name: openssl-macos-universal2
+          path: "../openssl-macos-universal2/"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: stable
+          # Add the arm64 target in addition to the native arch (x86_64)
+          target: aarch64-apple-darwin
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: cryptography-sdist
+
+      - run: ${{ matrix.PYTHON.BIN_PATH }} -m pip install -r "${UV_REQUIREMENTS_PATH}"
+      - name: add free-threaded python tools directory to PATH
+        # This can be deleted once the mac installer has a way to do this PATH
+        # update automatically, like it does for the GIL-enabled build.
+        # See https://github.com/python/cpython/issues/137450
+        run: echo "/Library/Frameworks/PythonT.framework/Versions/3.14/bin" >> "$GITHUB_PATH"
+        if: matrix.PYTHON.VERSION == '3.14t'
+      - run: mkdir wheelhouse
+      - name: Build the wheel
+        run: |
+          if [ -n "${{ matrix.PYTHON.ABI_VERSION }}" ]; then
+              PY_LIMITED_API="--config-settings=build-args=--features=pyo3/abi3-${{ matrix.PYTHON.ABI_VERSION }}"
+          fi
+
+          OPENSSL_DIR="$(readlink -f ../openssl-macos-universal2/)" \
+              OPENSSL_STATIC=1 \
+              uv build --python='${{ matrix.PYTHON.BIN_PATH }}' --wheel --require-hashes --build-constraint=$BUILD_REQUIREMENTS_PATH $PY_LIMITED_API cryptography*.tar.gz -o wheelhouse/
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.PYTHON.DEPLOYMENT_TARGET }}
+          ARCHFLAGS: ${{ matrix.PYTHON.ARCHFLAGS }}
+          _PYTHON_HOST_PLATFORM: ${{ matrix.PYTHON._PYTHON_HOST_PLATFORM }}
+
+      - run: uv venv --python='${{ matrix.PYTHON.BIN_PATH }}'
+      - run: uv pip install --require-hashes -r $BUILD_REQUIREMENTS_PATH
+      - run: uv pip install cryptography --no-index -f wheelhouse/
+      - name: Show the wheel's minimum macOS SDK and architectures
+        run: |
+          find .venv/lib/*/site-packages/cryptography/hazmat/bindings -name '*.so' -exec vtool -show {} \;
+      - run: |
+          echo "from cryptography.hazmat.backends.openssl.backend import backend;print('Loaded: ' + backend.openssl_version_text());print('Linked Against: ' + backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode('ascii'))" | uv run -
+
+      - run: |
+          echo "CRYPTOGRAPHY_WHEEL_NAME=$(basename $(ls wheelhouse/cryptography*.whl))" >> $GITHUB_ENV
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: "${{ env.CRYPTOGRAPHY_WHEEL_NAME }}"
+          path: wheelhouse/
+
+  windows:
+    needs: [sdist]
+    runs-on: ${{ matrix.WINDOWS.RUNNER }}
+    strategy:
+      fail-fast: false
+      matrix:
+        WINDOWS:
+          - {ARCH: 'x86', WINDOWS: 'win32', RUST_TRIPLE: 'i686-pc-windows-msvc', RUNNER: 'windows-latest'}
+          - {ARCH: 'x64', WINDOWS: 'win64', RUST_TRIPLE: 'x86_64-pc-windows-msvc', RUNNER: 'windows-latest'}
+          - {ARCH: 'arm64', WINDOWS: 'arm64', RUST_TRIPLE: 'aarch64-pc-windows-msvc', RUNNER: 'windows-11-arm'}
+        PYTHON:
+          - {VERSION: "3.11", "ABI_VERSION": "py38"}
+          - {VERSION: "3.11", "ABI_VERSION": "py311"}
+          - {VERSION: "3.14t-dev"}
+          - {VERSION: "pypy-3.10"}
+          - {VERSION: "pypy-3.11"}
+        exclude:
+          # We need to exclude the below configuration because there is no 32-bit pypy3
+          - WINDOWS: {ARCH: 'x86', WINDOWS: 'win32', RUST_TRIPLE: 'i686-pc-windows-msvc'}
+            PYTHON: {VERSION: "pypy-3.10"}
+          - WINDOWS: {ARCH: 'x86', WINDOWS: 'win32', RUST_TRIPLE: 'i686-pc-windows-msvc'}
+            PYTHON: {VERSION: "pypy-3.11"}
+          # We need to exclude the below configuration because there is no ARM64 pypy3
+          - WINDOWS: {ARCH: 'arm64', WINDOWS: 'arm64', RUST_TRIPLE: 'aarch64-pc-windows-msvc', RUNNER: 'windows-11-arm'}
+            PYTHON: {VERSION: "pypy-3.10"}
+          - WINDOWS: {ARCH: 'arm64', WINDOWS: 'arm64', RUST_TRIPLE: 'aarch64-pc-windows-msvc', RUNNER: 'windows-11-arm'}
+            PYTHON: {VERSION: "pypy-3.11"}
+    name: "${{ matrix.PYTHON.VERSION }} ${{ matrix.WINDOWS.WINDOWS }} ${{ matrix.PYTHON.ABI_VERSION }}"
+    steps:
+      - name: Get build-requirements.txt from repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          # The tag to build or the tag received by the tag event
+          ref: ${{ github.event.inputs.version || github.ref }}
+          persist-credentials: false
+          sparse-checkout: |
+            ${{ env.BUILD_REQUIREMENTS_PATH }}
+            ${{ env.UV_REQUIREMENTS_PATH }}
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: cryptography-sdist
+
+      - name: Setup python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        id: setup-python
+        with:
+          python-version: ${{ matrix.PYTHON.VERSION }}
+          architecture: ${{ matrix.WINDOWS.ARCH }}
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: stable
+          target: ${{ matrix.WINDOWS.RUST_TRIPLE }}
+
+      - uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        with:
+          repo: pyca/infra
+          workflow: build-windows-openssl.yml
+          branch: main
+          workflow_conclusion: success
+          name: "openssl-${{ matrix.WINDOWS.WINDOWS }}"
+          path: "C:/openssl-${{ matrix.WINDOWS.WINDOWS }}/"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure OpenSSL
+        run: |
+            echo "OPENSSL_DIR=C:/openssl-${{ matrix.WINDOWS.WINDOWS }}" >> $GITHUB_ENV
+            echo "OPENSSL_STATIC=1" >> $GITHUB_ENV
+        shell: bash
+
+      - run: pip install -r "${UV_REQUIREMENTS_PATH}"
+        shell: bash
+      - run: mkdir wheelhouse
+      - run: |
+          if [ -n "${{ matrix.PYTHON.ABI_VERSION }}" ]; then
+              PY_LIMITED_API="--config-settings=build-args=--features=pyo3/abi3-${{ matrix.PYTHON.ABI_VERSION }}"
+          fi
+
+          uv build --python='${{ steps.setup-python.outputs.python-path }}' --wheel --require-hashes --build-constraint=$BUILD_REQUIREMENTS_PATH cryptography*.tar.gz $PY_LIMITED_API -o wheelhouse/
+        shell: bash
+
+      # the --python argument and setup-python step ID can be removed when uv's
+      # solver no longer considers the free-threaded build to be experimental
+      - run: uv venv --python='${{ steps.setup-python.outputs.python-path }}'
+      - run: uv pip install --require-hashes -r "${BUILD_REQUIREMENTS_PATH}"
+        shell: bash
+      - run: uv pip install cryptography --no-index -f wheelhouse/
+      - name: Print the OpenSSL we built and linked against
+        run: |
+            echo "from cryptography.hazmat.backends.openssl.backend import backend;print('Loaded: ' + backend.openssl_version_text());print('Linked Against: ' + backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode('ascii'))" | uv run -
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.WINDOWS.WINDOWS }}-${{ matrix.PYTHON.VERSION }}-${{ matrix.PYTHON.ABI_VERSION }}"
+          path: wheelhouse\

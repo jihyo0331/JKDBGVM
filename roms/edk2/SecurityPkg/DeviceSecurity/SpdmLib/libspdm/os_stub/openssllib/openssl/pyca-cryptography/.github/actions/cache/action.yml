@@ -1,0 +1,22 @@
+name: Cache
+description: Caches build data to speed builds
+inputs:
+  key:
+    description: 'extra cache key components'
+    required: false
+    default: ''
+
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Normalize key
+      id: normalized-key
+      run: echo "key=$(echo "${KEY}" | tr -d ',')" >> $GITHUB_OUTPUT
+      shell: bash
+      env:
+        KEY: "${{ inputs.key }}"
+    - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
+      with:
+        key: ${{ steps.normalized-key.outputs.key }}-4

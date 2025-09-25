@@ -1,0 +1,121 @@
+{
+  "type": "object",
+  "definitions": {
+    "EcdsaTestGroup": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "EcdsaVerify"
+          ]
+        },
+        "source": {
+          "$ref": "common.json#/definitions/Source"
+        },
+        "publicKey": {
+          "$ref": "ecdsa_common.json#/definitions/EcPublicKey",
+          "description": "unencoded EC public key"
+        },
+        "publicKeyDer": {
+          "type": "string",
+          "format": "Der",
+          "description": "DER encoded public key"
+        },
+        "publicKeyPem": {
+          "type": "string",
+          "format": "Pem",
+          "description": "Pem encoded public key"
+        },
+        "sha": {
+          "type": "string",
+          "description": "the hash function used for ECDSA"
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AsnSignatureTestVector"
+          }
+        }
+      },
+      "required": ["source"],
+      "additionalProperties": false
+    },
+    "AsnSignatureTestVector": {
+      "type": "object",
+      "properties": {
+        "tcId": {
+          "type": "integer",
+          "description": "Identifier of the test case"
+        },
+        "comment": {
+          "type": "string",
+          "description": "A brief description of the test case"
+        },
+        "msg": {
+          "type": "string",
+          "format": "HexBytes",
+          "description": "The message to sign"
+        },
+        "sig": {
+          "type": "string",
+          "format": "Asn",
+          "description": "An ASN encoded signature for msg"
+        },
+        "result": {
+          "type": "string",
+          "description": "Test result",
+          "enum": [
+            "valid",
+            "invalid",
+            "acceptable"
+          ]
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of flags"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "algorithm": {
+      "type": "string",
+      "description": "the primitive tested in the test file"
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "DEPRECATED: prefer \"source\" property in test group",
+      "deprecated": true
+    },
+    "header": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "additional documentation"
+    },
+    "notes": {
+      "$ref": "common.json#/definitions/Notes"
+    },
+    "numberOfTests": {
+      "type": "integer",
+      "description": "the number of test vectors in this test"
+    },
+    "schema": {
+      "enum": [
+        "ecdsa_verify_schema_v1.json"
+      ]
+    },
+    "testGroups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/EcdsaTestGroup"
+      }
+    }
+  },
+  "additionalProperties": false
+}
