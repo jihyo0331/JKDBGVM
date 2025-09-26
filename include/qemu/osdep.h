@@ -93,9 +93,8 @@ QEMU_EXTERN_C int daemon(int, int);
 #endif
 
 /*
- * We need the FreeBSD "legacy" definitions. Rust needs the FreeBSD 11 system
- * calls since it doesn't use libc at all, so we have to emulate that despite
- * FreeBSD 11 being EOL'd.
+ * We rely on the FreeBSD 11 "legacy" definitions in a few places, so request
+ * them explicitly.
  */
 #ifdef __FreeBSD__
 #define _WANT_FREEBSD11_STAT

@@ -217,7 +217,6 @@ native:
 - ruby-dev
 - ruby-rake
 - rust
-- rust-bindgen
 - rust-clippy
 - samurai
 - screen

@@ -16,7 +16,7 @@ RUN dnf distro-sync -y && \
         alsa-lib-devel \
         bash \
         bc \
-        bindgen-cli \
+
         bison \
         brlapi-devel \
         bzip2 \

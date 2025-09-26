@@ -23,7 +23,7 @@ exec "$@"\n' > /usr/bin/nosync && \
                alsa-lib-devel \
                bash \
                bc \
-               bindgen-cli \
+
                bison \
                brlapi-devel \
                bzip2 \
