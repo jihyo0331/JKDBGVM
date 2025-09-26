@@ -1,0 +1,245 @@
+[2025-09-27 00:57:18] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:19] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:29] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:32] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:33] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:34] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:36] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:47] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:57:47] [DEBUG] Timing start: snapctl savevm:test13
+[2025-09-27 00:57:49] [INFO] snapctl savevm:test13 completed in 2017.125 ms
+[2025-09-27 00:57:49] [ERROR] savevm 'test13' 실패
+[2025-09-27 00:57:56] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:59:28] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 00:59:59] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:00:00] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:00:00] [DEBUG] Timing start: snapctl loadvm:test13
+[2025-09-27 01:00:51] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:00:51] [DEBUG] Timing start: snapctl loadvm:test13
+[2025-09-27 01:11:23] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:11:25] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:11:50] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:11:50] [DEBUG] Timing start: snapctl savevm:test15
+[2025-09-27 01:11:50] [DEBUG] Starting savevm for snapshot: test15
+[2025-09-27 01:12:13] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:12:13] [DEBUG] Timing start: snapctl savevm:test16
+[2025-09-27 01:12:13] [DEBUG] Starting savevm for snapshot: test16
+[2025-09-27 01:12:21] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:12:24] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:12:26] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:12:31] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:12:35] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:12:35] [DEBUG] Timing start: snapctl savevm:test17
+[2025-09-27 01:12:35] [DEBUG] Starting savevm for snapshot: test17
+[2025-09-27 01:12:44] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:13:10] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:23:37] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:23:42] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:23:44] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:23:46] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:23:57] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:02] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:04] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:24:05] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:05] [DEBUG] Timing start: snapctl savevm:test17
+[2025-09-27 01:24:05] [DEBUG] Starting savevm for snapshot: test17
+[2025-09-27 01:24:07] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:24:07] [DEBUG] snapctl savevm:test17: 2.388 s (2388 ms)
+[2025-09-27 01:24:07] [INFO] savevm 'test17' 성공 (2.388 s)
+[2025-09-27 01:24:09] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:11] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:24:14] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:24:14] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:16] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:24:18] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:24:18] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:20] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:24:20] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:24] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:29] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:29] [DEBUG] Timing start: snapctl loadvm:test13
+[2025-09-27 01:24:30] [DEBUG] snapctl loadvm:test13: 0.764 s (764 ms)
+[2025-09-27 01:24:30] [ERROR] loadvm 'test13' 실패 (0.764 s)
+[2025-09-27 01:24:37] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:39] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:41] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:24:42] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:44] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:24:46] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:50] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:24:52] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:24:58] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:25:13] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:25:13] [DEBUG] Timing start: snapctl savevm:test18
+[2025-09-27 01:25:13] [DEBUG] Starting savevm for snapshot: test18
+[2025-09-27 01:25:16] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:25:18] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:25:18] [DEBUG] snapctl savevm:test18: 4.626 s (4626 ms)
+[2025-09-27 01:25:18] [ERROR] savevm 'test18' 실패 (4.626 s)
+[2025-09-27 01:25:21] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:25:37] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:25:37] [DEBUG] Timing start: snapctl loadvm:test18
+[2025-09-27 01:25:39] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:25:41] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:25:43] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:25:45] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:25:47] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:25:49] [DEBUG] snapctl loadvm:test18: 12.288 s (12288 ms)
+[2025-09-27 01:25:49] [ERROR] loadvm 'test18' 실패 (12.288 s)
+[2025-09-27 01:28:54] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:28:58] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:29:00] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:29:06] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:29:10] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:29:10] [DEBUG] Timing start: snapctl savevm:test19
+[2025-09-27 01:29:10] [DEBUG] Starting savevm for snapshot: test19
+[2025-09-27 01:29:12] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:29:14] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:29:14] [DEBUG] snapctl savevm:test19: 4.566 s (4566 ms)
+[2025-09-27 01:29:14] [ERROR] savevm 'test19' 실패 (4.566 s)
+[2025-09-27 01:29:17] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:29:19] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:29:21] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:29:21] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:30:24] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:30:24] [DEBUG] Timing start: snapctl loadvm:test19
+[2025-09-27 01:30:26] [ERROR] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:30:28] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:30:30] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:30:33] [ERROR] QMP capabilities 응답을 읽지 못했습니다
+[2025-09-27 01:30:35] [DEBUG] snapctl loadvm:test19: 10.971 s (10971 ms)
+[2025-09-27 01:30:35] [ERROR] loadvm 'test19' 실패 (10.971 s)
+[2025-09-27 01:32:01] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:32:05] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:32:11] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:32:24] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:32:24] [DEBUG] Timing start: snapctl savevm:test20
+[2025-09-27 01:32:24] [DEBUG] Starting savevm for snapshot: test20
+[2025-09-27 01:32:33] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:32:36] [DEBUG] snapctl savevm:test20: 11.498 s (11498 ms)
+[2025-09-27 01:32:36] [ERROR] savevm 'test20' 실패 (11.498 s)
+[2025-09-27 01:32:38] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:33:03] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:33:07] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:33:22] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:33:40] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:33:40] [DEBUG] Timing start: snapctl savevm:test21
+[2025-09-27 01:33:40] [DEBUG] Starting savevm for snapshot: test21
+[2025-09-27 01:33:48] [DEBUG] snapctl savevm:test21: 8.068 s (8068 ms)
+[2025-09-27 01:33:48] [INFO] savevm 'test21' 성공 (8.068 s)
+[2025-09-27 01:34:08] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:34:08] [DEBUG] Timing start: snapctl loadvm:test21
+[2025-09-27 01:34:16] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:34:20] [DEBUG] snapctl loadvm:test21: 11.856 s (11856 ms)
+[2025-09-27 01:34:20] [ERROR] loadvm 'test21' 실패 (11.856 s)
+[2025-09-27 01:34:33] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:34:36] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:34:44] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:35:09] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:35:09] [DEBUG] Timing start: snapctl savevm:test22
+[2025-09-27 01:35:09] [DEBUG] Starting savevm for snapshot: test22
+[2025-09-27 01:35:17] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:35:19] [DEBUG] snapctl savevm:test22: 10.729 s (10729 ms)
+[2025-09-27 01:35:19] [ERROR] savevm 'test22' 실패 (10.729 s)
+[2025-09-27 01:51:50] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:51:52] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:51:57] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:52:05] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:52:05] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:52:08] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:52:24] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:52:24] [DEBUG] Timing start: snapctl savevm:test23
+[2025-09-27 01:52:24] [DEBUG] Starting savevm for snapshot: test23
+[2025-09-27 01:52:31] [DEBUG] snapctl savevm:test23: 7.197 s (7197 ms)
+[2025-09-27 01:52:31] [INFO] savevm 'test23' 성공 (7.197 s)
+[2025-09-27 01:52:37] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:52:55] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:52:55] [DEBUG] Timing start: snapctl loadvm:test23
+[2025-09-27 01:53:03] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 01:53:08] [WARN] loadvm 'test23': 응답을 받지 못했지만 상태 확인 결과 성공으로 간주합니다
+[2025-09-27 01:53:08] [DEBUG] snapctl loadvm:test23: 13.365 s (13365 ms)
+[2025-09-27 01:53:08] [INFO] loadvm 'test23' 성공 (13.365 s)
+[2025-09-27 01:54:20] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:54:59] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 01:55:07] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 02:03:58] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 02:04:04] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 02:04:22] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 02:04:22] [DEBUG] Timing start: snapctl savevm:test27
+[2025-09-27 02:04:22] [DEBUG] Starting savevm for snapshot: test27
+[2025-09-27 02:04:31] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 02:04:35] [INFO] Snapshot 'test27' verified in snapshot list
+[2025-09-27 02:04:35] [DEBUG] snapctl savevm:test27: 12.859 s (12859 ms)
+[2025-09-27 02:04:35] [INFO] savevm 'test27' 성공 (12.859 s)
+[2025-09-27 04:19:58] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:00] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:00] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:00] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:00] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:00] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:01] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:01] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:02] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:17] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:20:17] [DEBUG] Timing start: snapctl savevm:ㅅㄷㅁㅅ
+[2025-09-27 04:20:17] [DEBUG] Starting savevm for snapshot: ㅅㄷㅁㅅ
+[2025-09-27 04:20:24] [DEBUG] snapctl savevm:ㅅㄷㅁㅅ: 7.129 s (7129 ms)
+[2025-09-27 04:21:02] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:21:34] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:21:44] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:21:44] [DEBUG] Timing start: snapctl loadvm:test27
+[2025-09-27 04:21:52] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 04:21:57] [WARN] loadvm 'test27': 응답을 받지 못했지만 상태 확인 결과 성공으로 간주합니다
+[2025-09-27 04:21:57] [DEBUG] snapctl loadvm:test27: 13.256 s (13256 ms)
+[2025-09-27 04:21:57] [INFO] loadvm 'test27' 성공 (13.256 s)
+[2025-09-27 04:22:17] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:22:17] [DEBUG] Timing start: snapctl loadvm:test27
+[2025-09-27 04:22:25] [WARN] HMP 응답을 읽지 못했습니다
+[2025-09-27 04:22:30] [WARN] loadvm 'test27': 응답을 받지 못했지만 상태 확인 결과 성공으로 간주합니다
+[2025-09-27 04:22:30] [DEBUG] snapctl loadvm:test27: 12.612 s (12612 ms)
+[2025-09-27 04:22:30] [INFO] loadvm 'test27' 성공 (12.612 s)
+[2025-09-27 04:28:42] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:29:01] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:29:01] [DEBUG] Timing start: snapctl loadvm:test27
+[2025-09-27 04:29:14] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:29:14] [DEBUG] snapctl loadvm:test27: 13.799 s (13799 ms)
+[2025-09-27 04:29:14] [INFO] loadvm 'test27' 성공 (13.799 s)
+[2025-09-27 04:29:28] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:29:28] [DEBUG] Timing start: snapctl savevm:test28
+[2025-09-27 04:29:28] [DEBUG] Starting savevm for snapshot: test28
+[2025-09-27 04:29:45] [WARN] QMP capabilities 응답을 읽지 못했습니다 (시도 1/3)
+[2025-09-27 04:29:45] [INFO] Snapshot 'test28' verified in snapshot list
+[2025-09-27 04:29:45] [DEBUG] snapctl savevm:test28: 17.013 s (17013 ms)
+[2025-09-27 04:29:45] [INFO] savevm 'test28' 성공 (17.013 s)
+[2025-09-27 04:29:52] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:29:55] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:30:15] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:30:20] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:30:28] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:30:39] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:30:39] [DEBUG] Timing start: snapctl savevm:test29
+[2025-09-27 04:30:39] [DEBUG] Starting savevm for snapshot: test29
+[2025-09-27 04:30:45] [DEBUG] snapctl savevm:test29: 6.321 s (6321 ms)
+[2025-09-27 04:30:45] [INFO] savevm 'test29' 성공 (6.321 s)
+[2025-09-27 04:30:48] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:31:01] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:31:01] [DEBUG] Timing start: snapctl loadvm:test29
+[2025-09-27 04:31:13] [DEBUG] snapctl loadvm:test29: 12.598 s (12598 ms)
+[2025-09-27 04:31:13] [INFO] loadvm 'test29' 성공 (12.598 s)
+[2025-09-27 04:35:05] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:35:27] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:35:27] [DEBUG] Timing start: snapctl savevm:test30
+[2025-09-27 04:35:27] [DEBUG] Starting savevm for snapshot: test30
+[2025-09-27 04:35:44] [WARN] QMP capabilities 응답을 읽지 못했습니다 (시도 1/3)
+[2025-09-27 04:35:45] [INFO] Snapshot 'test30' verified in snapshot list
+[2025-09-27 04:35:45] [DEBUG] snapctl savevm:test30: 17.595 s (17595 ms)
+[2025-09-27 04:35:45] [INFO] savevm 'test30' 성공 (17.595 s)
+[2025-09-27 04:39:39] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:39:39] [DEBUG] Timing start: snapctl savevm:test31
+[2025-09-27 04:39:39] [DEBUG] Starting savevm for snapshot: test31
+[2025-09-27 04:39:45] [DEBUG] snapctl savevm:test31: 5.961 s (5961 ms)
+[2025-09-27 04:39:45] [INFO] savevm 'test31' 성공 (5.961 s)
+[2025-09-27 04:40:00] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:40:00] [DEBUG] Timing start: snapctl loadvm:test31
+[2025-09-27 04:40:12] [DEBUG] snapctl loadvm:test31: 12.413 s (12413 ms)
+[2025-09-27 04:40:12] [INFO] loadvm 'test31' 성공 (12.413 s)

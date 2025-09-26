@@ -3,18 +3,31 @@
 CC      ?= gcc
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra -Wshadow
 LDFLAGS ?=
+LDLIBS  ?=
+LDLIBS  += -lm
 
 OUT_DIR := build
-SRC     := snapctl/snapctl.c
+OBJ_DIR := $(OUT_DIR)/obj
+SRC     := snapctl/snapctl.c snapctl/time.c 
 BIN     := $(OUT_DIR)/snapctl
+
 
 all: $(BIN)
 
 $(OUT_DIR):
 	@mkdir -p $(OUT_DIR)
 
-$(BIN): $(SRC) | $(OUT_DIR)
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+OBJS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(SRC))
+
+$(OBJ_DIR): | $(OUT_DIR)
+	@mkdir -p $(OBJ_DIR)
+
+$(OBJ_DIR)/%.o: %.c | $(OBJ_DIR)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(BIN): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 	@echo "Built $@"
 
 run: all
