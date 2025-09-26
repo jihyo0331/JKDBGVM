@@ -25,6 +25,10 @@
 #include "qemu/main-loop.h"
 #include "qemu/atomic.h"
 #include "qemu/error-report.h"
+#include "qemu/thread.h"
+#include "disas/disas.h"
+#include "qapi/qapi-commands-machine.h"
+#include "qapi/type-helpers.h"
 #include "hw/irq.h"
 #include "qom/object.h"
 #ifdef CONFIG_ARM_GIC
@@ -54,6 +58,102 @@ static const char *irq_classification(IRQState *irq)
 
 static int irq_log_enabled;
 
+#if defined(__GNUC__)
+#pragma weak lookup_symbol
+#endif
+
+#define IRQ_LOG_RING_SIZE 1024
+
+typedef struct IRQTraceSample {
+    bool valid;
+    int64_t timestamp_ns;
+    int level;
+    int irq_line;
+    char *kind;
+    char *path;
+    int host_tid;
+    char *thread_name;
+    uint64_t caller_addr;
+    char *caller_symbol;
+} IRQTraceSample;
+
+static IRQTraceSample irq_trace_ring[IRQ_LOG_RING_SIZE];
+static size_t irq_trace_index;
+static size_t irq_trace_count;
+static QemuMutex irq_trace_mutex;
+static gsize irq_trace_mutex_once;
+
+static char *irq_trace_lookup_thread_name(int tid)
+{
+#ifdef __linux__
+    char *filename = g_strdup_printf("/proc/self/task/%d/comm", tid);
+    char *contents = NULL;
+    gsize len;
+
+    if (g_file_get_contents(filename, &contents, &len, NULL)) {
+        g_strchomp(contents);
+    }
+    g_free(filename);
+    return contents;
+#else
+    (void)tid;
+    return NULL;
+#endif
+}
+
+static void irq_trace_entry_reset(IRQTraceSample *entry)
+{
+    if (!entry->valid) {
+        return;
+    }
+
+    g_free(entry->kind);
+    g_free(entry->path);
+    g_free(entry->thread_name);
+    g_free(entry->caller_symbol);
+    memset(entry, 0, sizeof(*entry));
+}
+
+static void irq_trace_ensure_init(void)
+{
+    if (g_once_init_enter(&irq_trace_mutex_once)) {
+        qemu_mutex_init(&irq_trace_mutex);
+        g_once_init_leave(&irq_trace_mutex_once, 1);
+    }
+}
+
+static void irq_trace_record(int64_t timestamp_ns, int level, int irq_line,
+                             const char *kind, const char *path,
+                             int host_tid, uint64_t caller_addr,
+                             const char *caller_symbol)
+{
+    irq_trace_ensure_init();
+    qemu_mutex_lock(&irq_trace_mutex);
+
+    IRQTraceSample *slot = &irq_trace_ring[irq_trace_index];
+    irq_trace_entry_reset(slot);
+
+    slot->timestamp_ns = timestamp_ns;
+    slot->level = level;
+    slot->irq_line = irq_line;
+    slot->kind = g_strdup(kind);
+    slot->path = g_strdup(path);
+    slot->host_tid = host_tid;
+    slot->thread_name = irq_trace_lookup_thread_name(host_tid);
+    slot->caller_addr = caller_addr;
+    if (caller_symbol && *caller_symbol) {
+        slot->caller_symbol = g_strdup(caller_symbol);
+    }
+    slot->valid = true;
+
+    irq_trace_index = (irq_trace_index + 1) % IRQ_LOG_RING_SIZE;
+    if (irq_trace_count < IRQ_LOG_RING_SIZE) {
+        irq_trace_count++;
+    }
+
+    qemu_mutex_unlock(&irq_trace_mutex);
+}
+
 void qemu_set_irq(qemu_irq irq, int level)
 {
     if (!irq)
@@ -62,17 +162,26 @@ void qemu_set_irq(qemu_irq irq, int level)
     if (qatomic_read(&irq_log_enabled)) {
         int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
         char *path = object_get_canonical_path(OBJECT(irq));
-
+        const char *classification = irq_classification(irq);
         int thread_id = qemu_get_thread_id();
         void *caller = __builtin_return_address(0);
+        const char *symbol = NULL;
+        if (lookup_symbol) {
+            symbol = lookup_symbol((uint64_t)caller);
+        }
+        const char *path_or_default = path ? path : "(anonymous)";
 
         error_printf("irq-log: time=%" PRId64 "ns level=%d n=%d kind=%s\n"
                      "         path=%s\n"
                      "         irq=%p handler=%p opaque=%p\n"
                      "         host-tid=%d caller=%p\n",
-                     now, level, irq->n, irq_classification(irq),
-                     path ? path : "(anonymous)", irq, irq->handler,
+                     now, level, irq->n, classification,
+                     path_or_default, irq, irq->handler,
                      irq->opaque, thread_id, caller);
+
+        irq_trace_record(now, level, irq->n, classification,
+                         path_or_default, thread_id,
+                         (uint64_t)caller, symbol && symbol[0] ? symbol : NULL);
         g_free(path);
     }
 
@@ -88,6 +197,73 @@ void qemu_irq_log_set_enabled(bool enable)
 bool qemu_irq_log_enabled(void)
 {
     return qatomic_read(&irq_log_enabled);
+}
+
+IRQTraceEntryList *qmp_query_irq_log(bool has_max_entries, uint16_t max_entries,
+                                     bool has_filter_tid, int64_t filter_tid,
+                                     bool has_filter_line, int64_t filter_line,
+                                     Error **errp)
+{
+    IRQTraceEntryList *head = NULL;
+    size_t produced = 0;
+
+    irq_trace_ensure_init();
+    qemu_mutex_lock(&irq_trace_mutex);
+
+    size_t remaining = irq_trace_count;
+    size_t idx = (irq_trace_index + IRQ_LOG_RING_SIZE - 1) % IRQ_LOG_RING_SIZE;
+
+    while (remaining > 0) {
+        IRQTraceSample *sample = &irq_trace_ring[idx];
+
+        if (sample->valid) {
+            bool match = true;
+
+            if (has_filter_tid && sample->host_tid != filter_tid) {
+                match = false;
+            }
+            if (match && has_filter_line && sample->irq_line != filter_line) {
+                match = false;
+            }
+
+            if (match) {
+                if (!has_max_entries || produced < max_entries) {
+                    IRQTraceEntry *entry = g_new0(IRQTraceEntry, 1);
+
+                    entry->timestamp_ns = sample->timestamp_ns;
+                    entry->level = sample->level;
+                    entry->irq_line = sample->irq_line;
+                    entry->kind = g_strdup(sample->kind ? sample->kind : "");
+                    entry->path = g_strdup(sample->path ? sample->path : "");
+                    entry->host_tid = sample->host_tid;
+                    entry->caller_addr = sample->caller_addr;
+
+                    if (sample->thread_name) {
+                        entry->thread_name = g_strdup(sample->thread_name);
+                    }
+                    if (sample->caller_symbol) {
+                        entry->caller_symbol = g_strdup(sample->caller_symbol);
+                    }
+
+                    QAPI_LIST_PREPEND(head, entry);
+                    produced++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if (idx == 0) {
+            idx = IRQ_LOG_RING_SIZE - 1;
+        } else {
+            idx--;
+        }
+        remaining--;
+    }
+
+    qemu_mutex_unlock(&irq_trace_mutex);
+
+    return head;
 }
 
 static void init_irq_fields(IRQState *irq, qemu_irq_handler handler,

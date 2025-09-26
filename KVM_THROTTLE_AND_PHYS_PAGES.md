@@ -357,6 +357,42 @@ void qemu_set_irq(qemu_irq irq, int level)
   - 출력에는 요약 정보와 원본 로그가 함께 포함되어 있어 대규모 트레이스를 탐색할 때 유용하다.
 - **CI/자동화 통합**: 테스트 스크립트에서 로깅을 켠 뒤 `irqlog-analyze.py` 결과를 파싱하면 특정 IRQ가 예상한 스레드/코드 경로에서 발생했는지 자동 검증할 수 있다.
 
+#### 4.6.1 실시간 코드 추적 절차
+
+다음 순서를 따르면 외부 디버거 없이 QMP만으로 인터럽트 흐름을 추적할 수 있다.
+
+1. **로깅 활성화**
+   ```bash
+   { "execute": "irq-log-set", "arguments": { "enable": true } }
+   ```
+   명령 적용 이후 발생하는 모든 IRQ가 ring buffer와 `stderr`에 기록된다.
+
+2. **QMP로 로그 조회**
+   ```bash
+   { "execute": "query-irq-log", "arguments": { "max-entries": 32 } }
+   ```
+   반환 JSON에는 다음 필드가 포함되어 있다 (일부 필드는 심볼/스레드 정보를
+   이용할 수 있을 때에만 채워진다).
+   - `timestamp-ns`: IRQ가 발생한 호스트 시각(ns 단위)
+   - `level` / `irq-line` / `kind` / `path`: IRQ 상태 정보
+   - `host-tid` / `thread-name`: IRQ를 발생시킨 호스트 스레드 ID 및 이름. Linux에서는
+     `/proc/<pid>/task/<tid>/comm`을 기반으로 하므로 16자 제한이 있으며, 메인 스레드는
+     보통 바이너리 이름(`qemu-system-x86_64` 등)이 그대로 노출된다.
+   - `caller-addr` / `caller-symbol`: IRQ를 발생시킨 QEMU 코드 위치. 바이너리에
+     심볼 정보가 없거나 심볼 해석 모듈이 비활성화되어 있으면 `caller-symbol`은
+     비어 있을 수 있다.
+
+   `filter-tid`나 `filter-line`을 사용하면 특정 스레드 또는 IRQ 라인만 추출할 수 있다.
+
+3. **로깅 종료**
+   ```bash
+   { "execute": "irq-log-set", "arguments": { "enable": false } }
+   ```
+   더 이상 로그가 쌓이지 않게 하여 ring buffer가 불필요하게 증가하는 것을 방지한다.
+
+4. **후처리(선택)**
+   `stderr`에 기록된 원본 로그가 필요하다면 `scripts/irqlog-analyze.py`로 TID ↔ 스레드명, 주소 ↔ 심볼을 재확인할 수 있다.
+
 ### 4.7 구현 절차 세부 단계
 
 아래 순서를 따르면 `host-tid`/`caller` 확장과 보조 스크립트를 동일하게 재현할 수 있다. 각 단계는 개별 커밋으로 나누어도 무방하며, 코드 변경을 수반하는 단계에는 예시 스니펫을 포함했다.
