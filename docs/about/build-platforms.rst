@@ -110,32 +110,6 @@ Python build dependencies
   required, it may be necessary to fetch python modules from the Python
   Package Index (PyPI) via ``pip``, in order to build QEMU.
 
-Rust build dependencies
-  QEMU is generally conservative in adding new Rust dependencies, and all
-  of them are included in the distributed tarballs.  One exception is the
-  bindgen tool, which is too big to package and distribute.  The minimum
-  supported version of bindgen is 0.60.x.  For distributions that do not
-  include bindgen or have an older version, it is recommended to install
-  a newer version using ``cargo install bindgen-cli``.
-
-  QEMU requires Rust 1.83.0.  This is available on all supported platforms
-  with two exception: Ubuntu LTS releases 22.04 and 24.04, and the
-  ``mips64el`` architecture on Debian bookworm.  For all other
-  architectures, Debian bookworm provides a new-enough Rust compiler
-  in the ``rustc-web`` package.
-
-  It is expected that in the future Ubuntu will provide updated packages
-  like the existing ``rustc-1.82`` package.  The path to ``rustc`` and
-  ``rustdoc`` will have to be provided manually to the configure script.
-
-  Some distros prefer to avoid vendored crate sources, and instead use
-  local sources from e.g. ``/usr/share/cargo/registry``.  QEMU includes a
-  script, ``scripts/get-wraps-from-cargo-registry.py``, that automatically
-  performs this task.  The script is meant to be invoked after unpacking
-  the QEMU tarball.  QEMU also includes ``rust/Cargo.toml`` and
-  ``rust/Cargo.lock`` files that can be used to compute QEMU's build
-  dependencies, e.g. using ``cargo2rpm -p rust/Cargo.toml buildrequires``.
-
 Optional build dependencies
   Build components whose absence does not affect the ability to build QEMU
   may not be available in distros, or may be too old for our requirements.

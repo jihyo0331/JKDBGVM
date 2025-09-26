@@ -3,7 +3,6 @@ packages:
  - alsa
  - bash
  - bc
- - bindgen
  - bison
  - brlapi
  - bzip2

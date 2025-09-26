@@ -20,7 +20,7 @@ exec "$@"\n' > /usr/bin/nosync && \
     nosync dnf install -y \
                bash \
                bc \
-               bindgen-cli \
+
                bison \
                bzip2 \
                ca-certificates \

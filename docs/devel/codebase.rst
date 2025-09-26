@@ -144,9 +144,6 @@ yet, so sometimes the source code is all you have.
 * `roms <https://gitlab.com/qemu-project/qemu/-/tree/master/roms>`_:
   Contains source code for various firmware and ROMs, which can be compiled if
   custom or updated versions are needed.
-* `rust <https://gitlab.com/qemu-project/qemu/-/tree/master/rust>`_:
-  Rust integration in QEMU. It contains the new interfaces defined and
-  associated devices using it.
 * `scripts <https://gitlab.com/qemu-project/qemu/-/tree/master/scripts>`_:
   Collection of scripts used in build and test systems, and various
   tools for QEMU codebase and execution traces.
