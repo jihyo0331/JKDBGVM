@@ -36,3 +36,4 @@ the :ref:`tcg_internals`.
    index-internals
    index-tcg
    codebase
+   irq-logging

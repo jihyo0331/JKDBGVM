@@ -305,12 +305,16 @@ void qemu_set_irq(qemu_irq irq, int level)
     if (qemu_irq_log_is_enabled()) {
         int64_t ts = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
         g_autofree char *path = object_get_canonical_path(OBJECT(irq));
+        int tid = qemu_get_thread_id();
+        void *caller = __builtin_return_address(0);
 
-        error_printf("irq-log: time=%" PRId64 "ns irq=%p path=%s kind=%s "
-                     "handler=%p opaque=%p n=%d level=%d\n",
-                     ts, irq, path ? path : "(anonymous)",
-                     irq_classification(irq), irq->handler,
-                     irq->opaque, irq->n, level);
+        error_printf("irq-log: time=%" PRId64 "ns level=%d n=%d kind=%s\n"
+                     "         path=%s\n"
+                     "         irq=%p handler=%p opaque=%p\n"
+                     "         host-tid=%d caller=%p\n",
+                     ts, level, irq->n, irq_classification(irq),
+                     path ? path : "(anonymous)", irq, irq->handler,
+                     irq->opaque, tid, caller);
     }
     irq->handler(irq->opaque, irq->n, level);
 }
@@ -319,23 +323,137 @@ void qemu_set_irq(qemu_irq irq, int level)
 - `irq_classification()` 헬퍼는 ARM GIC 계열이면 SGI/PPI/SPI 범위를 이용해 `software (SGI)`, `percpu (PPI)`, `hardware (SPI)`로 표기하고, 그 외 컨트롤러는 기본적으로 `hardware`로 표시한다.
 - `QEMU_CLOCK_REALTIME` 대신 `QEMU_CLOCK_HOST`를 선택해도 무방하다. ns 단위 타임스탬프 확보가 목적이다.
 - 출력 포맷을 고정 문자열로 유지하면 외부 파서가 손쉽게 분석할 수 있다.
+- 추가된 `host-tid`, `caller` 필드는 각각 IRQ를 발생시킨 호스트 스레드와 호출 지점을 추적하는 용도로 사용한다.
 
 ### 4.4 사용 패턴
 1. 로깅 활성화
-   ```bash
-   { "execute": "irq-log-set", "arguments": { "enable": true } }
-   ```
-   이후 `stderr`에는 모든 IRQ 이벤트가 한 줄씩 출력된다.
+ ```bash
+  { "execute": "irq-log-set", "arguments": { "enable": true } }
+  ```
+  이후 `stderr`에는 각 IRQ 이벤트가 4줄짜리 블록으로 출력된다.
 2. 로깅 비활성화
-   ```bash
-   { "execute": "irq-log-set", "arguments": { "enable": false } }
-   ```
-   즉시 `irq-log: disabled` 메시지가 출력되며, 추가 로그는 발생하지 않는다.
+  ```bash
+  { "execute": "irq-log-set", "arguments": { "enable": false } }
+  ```
+  즉시 `irq-log: disabled` 메시지가 출력되며, 추가 로그는 발생하지 않는다.
 
 ### 4.5 성능 및 확장 고려
 - 로깅 비활성화 시 오버헤드는 `qatomic_read` 한 번뿐이다.
 - 활성화 시 `fprintf` 비용이 크므로, 장시간 활성화를 예상하면 `stderr`를 파일로 리다이렉션하거나 버퍼링을 사용한다.
 - 향후 요구사항에 따라 `qemu_irq_log_set_sink(enum sink)` 같은 API를 도입하여 trace backend, ring buffer 등을 선택할 수 있다.
+
+### 4.6 로그 후처리 및 분석 워크플로우
+
+- **호스트 TID ↔ 스레드명 매핑**: 로깅된 `host-tid`는 `/proc/<pid>/task/<tid>/comm`(Linux) 또는 호스트 도구(`top -H`, `ps -L`)로 이름을 확인할 수 있다. 인터럽트를 일으킨 QEMU 스레드가 I/O 스레드인지, vCPU 스레드인지 구분할 수 있다.
+- **리턴 주소 역추적**: `caller` 필드를 `addr2line -Cfpe <qemu-binary> <address>`에 전달하면 정확한 함수/소스 라인으로 되짚을 수 있다. 심볼이 포함된 빌드를 사용할 것.
+- **자동화 스크립트**: `scripts/irqlog-analyze.py`는 위 과정을 자동화한다.
+  ```bash
+  # QEMU 프로세스가 여전히 실행 중이라고 가정
+  scripts/irqlog-analyze.py --pid $(pgrep qemu-system-x86_64) \
+      --binary build/qemu-system-x86_64 irq.log
+  ```
+  - `--pid`: `/proc/<pid>/task/<tid>/comm`을 읽어 스레드 이름을 붙인다. 비-Linux 환경이거나 종료된 프로세스라면 생략 가능하다.
+  - `--binary`: `addr2line`을 호출해 `caller` 주소를 함수·파일·라인으로 변환한다. `ADDR2LINE=/path/to/eu-addr2line` 환경 변수를 이용해 다른 구현을 사용할 수 있다.
+  - 출력에는 요약 정보와 원본 로그가 함께 포함되어 있어 대규모 트레이스를 탐색할 때 유용하다.
+- **CI/자동화 통합**: 테스트 스크립트에서 로깅을 켠 뒤 `irqlog-analyze.py` 결과를 파싱하면 특정 IRQ가 예상한 스레드/코드 경로에서 발생했는지 자동 검증할 수 있다.
+
+### 4.7 구현 절차 세부 단계
+
+아래 순서를 따르면 `host-tid`/`caller` 확장과 보조 스크립트를 동일하게 재현할 수 있다. 각 단계는 개별 커밋으로 나누어도 무방하며, 코드 변경을 수반하는 단계에는 예시 스니펫을 포함했다.
+
+1. **IRQ 핫패스 코드 수정**
+   - 대상 파일: `hw/core/irq.c`
+   - 필요한 헤더는 이미 포함되어 있으므로 추가 인클루드는 없다.
+   - `qemu_set_irq()` 본문에서 `qemu_get_thread_id()`(호스트 스레드 ID 취득)와 `__builtin_return_address(0)`(호출 지점 주소)를 사용해 새 변수를 정의한다.
+   - `error_printf()` 포맷 문자열을 4줄짜리 블록으로 재구성하고, 마지막 줄에 `host-tid`, `caller` 값을 출력한다. 포맷 변경은 외부 파서가 의존하므로, 컬럼명(예: `host-tid`)을 마음대로 수정하지 않는다.
+   - RT-safe 환경에서 `qemu_get_thread_id()`가 실패할 경우(예: BSD) 대비해 `tid` 기본값을 `-1`로 해 두거나, 플랫폼별 대안을 추가로 정의할 수 있다.
+   - 로그 블록이 끝난 뒤 기존처럼 `irq->handler(...)`를 호출하여 동작을 유지한다.
+
+2. **QOM 경로 확보**
+   - `object_get_canonical_path(OBJECT(irq))` 호출 결과를 반드시 `g_autofree` 혹은 `g_free()`로 해제한다. (예제에서는 `g_autofree` 매크로 사용)
+   - 경로가 존재하지 않는 IRQState의 경우 `(anonymous)`라는 문자열로 대체한다.
+
+3. **빌드 및 검증**
+   - 변경 후 `ninja -C build` 등으로 전체 빌드를 수행한다.
+   - 간단한 게스트를 실행하고 `-qmp`를 사용해 `irq-log-set`을 토글하여 실제 로그가 다중 라인으로 출력되는지 확인한다. 출력이 다음 예시와 유사해야 한다.
+     ```
+     irq-log: time=123456789ns level=1 n=32 kind=hardware
+              path=/machine/q35/ioapic/unnamed-gpio-in[0]
+              irq=0x55... handler=0x55... opaque=0x55...
+              host-tid=41267 caller=0x55...
+     ```
+
+4. **보조 스크립트 추가**
+   - 새 파일 `scripts/irqlog-analyze.py`를 생성하고, shebang(`#!/usr/bin/env python3`)과 실행 권한 부여(`chmod +x`)를 잊지 않는다.
+   - 스크립트는 다음 기능을 수행하도록 작성한다.
+     1. `irq-log:` 문자열을 기준으로 블록을 파싱한다 (`parse_records()` 함수를 별도로 두면 재사용이 쉽다).
+     2. `host-tid`를 `/proc/<pid>/task/<tid>/comm`에서 읽어 스레드 이름을 붙인다(선택 사항, Linux 전용).
+     3. `caller` 주소를 `addr2line`에 넘겨 함수/라인을 문자열로 받아온다. `ADDR2LINE` 환경 변수를 통해 사용자 정의 도구를 사용할 수 있게 한다.
+     4. 결과를 사람이 읽기 쉬운 형태로 재출력하면서 원본 로그도 함께 보여준다. 아래는 핵심 루프 예시다.
+        ```python
+        for rec in records:
+            thread_name = read_thread_name(args.pid, rec.tid, tid_cache) if rec.tid else None
+            symbol = resolve_symbol(args.binary, rec.caller, sym_cache) if rec.caller else None
+            print(format_record(rec, thread_name, symbol))
+        ```
+
+5. **문서화**
+   - `docs/devel/irq-logging.rst`와 같이 개발 문서에 스크립트 사용법을 추가한다.
+   - 사용자 여부에 따라 `docs/system/monitor.rst` 등 외부 문서에도 `host-tid`, `caller` 필드의 의미를 요약해 두면 좋다.
+
+6. **테스트 자동화 연계**
+   - (선택) CI 스크립트에서 `scripts/irqlog-analyze.py` 출력을 파싱해 지정된 IRQ가 특정 스레드/코드 경로에서만 발생하는지 검증하는 규칙을 추가한다.
+
+---
+
+## 7. 오디오 서브시스템 삭제 및 후속 처리
+
+IRQ 로깅 개선과 병행하여 QEMU에서 레거시 오디오 스택을 완전히 제거했다. 이 섹션은 오디오 코드 제거 작업을 반복하거나, 최소한의 구성으로 오디오 없는 빌드를 만들고 싶은 개발자를 위한 세부 가이드다.
+
+### 7.1 제거 범위 정의
+
+- **디바이스 모델**: `hw/audio/` 이하의 모든 구현(AC97, ES1370, SB16, Intel HDA 등)과 해당 헤더(`include/hw/audio/*.h`).
+- **백엔드**: `audio/` 디렉터리의 ALSA/PA/SDL 등 호스트 오디오 드라이버, 믹서, 캡처 코드.
+- **USB/Virtio 연계**: `hw/usb/dev-audio.c`, `hw/virtio/vhost-user-snd*.c`, 관련 헤더 및 Meson/Kconfig 항목.
+- **문서 및 테스트**: 오디오 옵션(`-audio`, `-audiodev`)을 다루는 문서, 오디오 장치 qtest/fuzzer, 예제 설정 파일.
+
+### 7.2 코드/빌드 시스템 수정 단계
+
+1. **소스 디렉터리 삭제**
+   - `git rm -r audio/ hw/audio/ hw/usb/dev-audio.c hw/virtio/vhost-user-snd*.c include/hw/audio/` 등 오디오 관련 트리를 일괄 삭제한다.
+2. **Kconfig / Meson 정리**
+   - `hw/Kconfig`, `hw/usb/Kconfig`, `hw/virtio/Kconfig`에서 오디오 디바이스 `config` 블록을 제거한다.
+   - `meson.build`, `hw/meson.build`, `ui/meson.build` 등에서 오디오 서브시스템을 추가하던 `subdir()`/`files()` 엔트리를 삭제한다.
+3. **CLI 옵션 제거**
+   - `qemu-options.hx`에서 `-audio`, `-audiodev` 옵션 정의와 긴 설명 블록을 삭제한다.
+   - `vl.c`의 기본 오디오 초기화(`default_audio`) 로직과 관련 경고 메시지를 제거한다.
+4. **QAPI/Monitor 정리**
+   - `qapi/audio.json`을 삭제하고, `qapi/meson.build`, `qapi/qapi-schema.json`에서 참조를 제거한다.
+   - `hmp-commands*.hx`에서 `wavcapture`, `stopcapture`, `info capture`와 같은 오디오 명령을 삭제한다.
+5. **문서/예제 업데이트**
+   - `docs/system/device-emulation.rst`, `docs/about/removed-features.rst` 등에 오디오 옵션 제거 사실을 명시한다.
+   - 예제 설정(`docs/config/q35-*.cfg`)에서 `audiodev` 섹션을 삭제한다.
+
+### 7.3 의존 컴포넌트 조정
+
+- **VNC/Spice**: VNC가 내부적으로 `audio/audio.h`를 참조하던 부분을 삭제하고, 오디오 관련 업데이트 루프(`freq` 측정 등)를 조건부로 비활성화한다.
+- **Runstate/Machine 초기화**: `system/runstate.c`, `hw/core/machine.c` 등에서 오디오 초기화 코드를 제거하여 빌드 에러를 방지한다.
+- **UI 계층**: `ui/dbus.*`, `ui/trace-events` 등 오디오 백엔드를 참조하던 코드와 트레이스 포인트를 제거한다.
+
+### 7.4 테스트/CI 후속 조치
+
+- 오디오 장치를 대상으로 하던 qtest (`tests/qtest/*-audio*.c`)와 퍼저(`tests/qtest/fuzz-sb16-test.c`)를 삭제하거나 스킵한다.
+- `tests/functional/ppc64/test_tuxrun.py` 등 일부 테스트가 `-audiodev none`을 전달하던 부분을 제거한다.
+- 빌드가 깨지지 않도록 `meson.build`에서 테스트 리스트를 업데이트한다.
+
+### 7.5 검증 체크리스트
+
+1. **빌드 검사**: `ninja -C build`가 성공하고, QAPI/Trace 재생성(`ninja qapi-gen`)이 오류 없이 완료되는지 확인한다.
+2. **런타임 확인**: 대표적인 머신(`x86_64-softmmu`, `aarch64-softmmu`)으로 QEMU를 실행해 기존 오디오 옵션이 존재하지 않음을 확인한다.
+3. **문서 일관성**: 사용자 문서에서 오디오 관련 설명이 남아 있지 않은지 최종 점검한다.
+4. **다운스트림 영향**: 오디오 장치에 의존하던 자동화 스크립트/CI 잡이 있는 경우 `virtio-sound` 등 대체 구현 안내를 제공한다.
+
+이 과정을 마치면, QEMU는 오디오 서브시스템 없이 빌드/실행되며 IRQ 로깅, KVM 스로틀, QMP 메모리 조회 같은 기능에 집중할 수 있다.
 
 ---
 

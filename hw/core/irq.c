@@ -63,12 +63,16 @@ void qemu_set_irq(qemu_irq irq, int level)
         int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
         char *path = object_get_canonical_path(OBJECT(irq));
 
+        int thread_id = qemu_get_thread_id();
+        void *caller = __builtin_return_address(0);
+
         error_printf("irq-log: time=%" PRId64 "ns level=%d n=%d kind=%s\n"
                      "         path=%s\n"
-                     "         irq=%p handler=%p opaque=%p\n",
+                     "         irq=%p handler=%p opaque=%p\n"
+                     "         host-tid=%d caller=%p\n",
                      now, level, irq->n, irq_classification(irq),
                      path ? path : "(anonymous)", irq, irq->handler,
-                     irq->opaque);
+                     irq->opaque, thread_id, caller);
         g_free(path);
     }
 
