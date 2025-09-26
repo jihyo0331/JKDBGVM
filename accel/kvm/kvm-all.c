@@ -51,6 +51,7 @@
 #include "system/dirtylimit.h"
 #include "qemu/range.h"
 #include "system/kvm-throttle.h"
+#include "sysemu/windows-sched-trace.h"
 
 #include "hw/boards.h"
 #include "system/stats.h"
@@ -3207,6 +3208,8 @@ int kvm_cpu_exec(CPUState *cpu)
          */
 
         attrs = kvm_arch_post_run(cpu, run);
+
+        windows_sched_trace_post_run(cpu);
 
 #ifdef KVM_HAVE_MCE_INJECTION
         if (unlikely(have_sigbus_pending)) {

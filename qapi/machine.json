@@ -189,6 +189,110 @@
   'returns': [ 'IRQTraceEntry' ] }
 
 ##
+# @WindowsSchedTraceOverrides:
+#
+# Optional manual overrides for Windows scheduler tracing offsets.
+# Each value is interpreted as a byte offset within the respective
+# kernel data structure.  Fields that remain unset default to the
+# auto-detected value provided by the guest's KDDEBUGGER_DATA64 block.
+#
+# @kpcr-current-prcb: Offset from KPCR base to the PRCB pointer.
+# @prcb-current-thread: Offset from KPRCB to the CurrentThread field.
+# @kthread-apc-process: Offset from KTHREAD to the owning EPROCESS pointer.
+# @kthread-client-id: Offset from KTHREAD to its CLIENT_ID (UniqueProcess,
+#                     UniqueThread).
+# @kthread-state: Offset from KTHREAD to its scheduler state byte.
+# @ethread-thread-name: Offset from ETHREAD to the UNICODE_STRING describing
+#                       the thread name (Windows 11 thread naming API).
+# @eprocess-image-file-name: Offset from EPROCESS to the 15-byte image name.
+#
+# Since: 10.1
+##
+{ 'struct': 'WindowsSchedTraceOverrides',
+  'data': { '*kpcr-current-prcb': 'uint16',
+            '*prcb-current-thread': 'uint16',
+            '*kthread-apc-process': 'uint16',
+            '*kthread-client-id': 'uint16',
+            '*kthread-state': 'uint16',
+            '*ethread-thread-name': 'uint16',
+            '*eprocess-image-file-name': 'uint16' } }
+
+##
+# @WindowsSchedTraceEntry:
+#
+# A single Windows scheduler event collected while tracing is enabled.
+#
+# @timestamp-ns: Nanosecond timestamp captured when the scheduler pivot
+#                was observed.
+# @vcpu: vCPU index that executed the running thread.
+# @thread-pointer: Guest virtual address of the KTHREAD/ETHREAD structure.
+# @process-pointer: Optional guest virtual address of the owning EPROCESS.
+# @unique-process-id: Optional numeric process identifier as reported by the
+#                     CLIENT_ID structure.
+# @unique-thread-id: Optional numeric thread identifier from CLIENT_ID.
+# @kthread-state: Optional KTHREAD state byte when offset information is
+#                 available.
+# @process-image: Optional ASCII image name pulled from EPROCESS.
+# @thread-name: Optional thread name extracted from the ETHREAD.
+#
+# Since: 10.1
+##
+{ 'struct': 'WindowsSchedTraceEntry',
+  'data': { 'timestamp-ns': 'uint64',
+            'vcpu': 'int',
+            'thread-pointer': 'uint64',
+            '*process-pointer': 'uint64',
+            '*unique-process-id': 'uint64',
+            '*unique-thread-id': 'uint64',
+            '*kthread-state': 'int',
+            '*process-image': 'str',
+            '*thread-name': 'str' } }
+
+##
+# @windows-sched-trace-set:
+#
+# Enable or disable the Windows scheduler tracer.  When enabling the tracer
+# the command optionally accepts manual overrides for structure offsets and
+# allows the auto-detection logic (based on KDDEBUGGER_DATA64) to be skipped.
+#
+# @enable: Toggle tracing.
+# @auto-detect: When true (default), QEMU attempts to read layout information
+#               from the guest.  When false, offsets must be supplied via
+#               @overrides.
+# @overrides: Optional manual offsets that take precedence over auto-detected
+#             values.
+#
+# Since: 10.1
+##
+{ 'command': 'windows-sched-trace-set',
+  'data': { 'enable': 'bool',
+            '*auto-detect': 'bool',
+            '*overrides': 'WindowsSchedTraceOverrides' } }
+
+##
+# @query-windows-sched-trace:
+#
+# Retrieve recent Windows scheduler events collected while tracing is
+# enabled.
+#
+# @max-entries: Optional limit on returned events (oldest-to-newest order).
+# @filter-vcpu: Restrict events to the specified vCPU index.
+# @filter-pid: Restrict events to a specific process identifier.
+# @filter-tid: Restrict events to a specific thread identifier.
+#
+# Returns: List of @WindowsSchedTraceEntry objects ordered from oldest to
+#          newest.
+#
+# Since: 10.1
+##
+{ 'command': 'query-windows-sched-trace',
+  'data': { '*max-entries': 'uint16',
+            '*filter-vcpu': 'uint16',
+            '*filter-pid': 'uint64',
+            '*filter-tid': 'uint64' },
+  'returns': [ 'WindowsSchedTraceEntry' ] }
+
+##
 # @CompatProperty:
 #
 # Property default values specific to a machine type, for use by

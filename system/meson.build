@@ -28,6 +28,7 @@ system_ss.add(files(
   'runstate-hmp-cmds.c',
   'runstate.c',
   'tpm-hmp-cmds.c',
+  'windows-sched-trace-stub.c',
   'watchpoint.c',
 ))
 

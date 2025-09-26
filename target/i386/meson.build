@@ -22,6 +22,7 @@ i386_system_ss.add(files(
   'monitor.c',
   'cpu-apic.c',
   'cpu-system.c',
+  'windows-sched-trace.c',
 ))
 i386_system_ss.add(when: 'CONFIG_SEV', if_true: files('sev.c'),
                                        if_false: files('sev-system-stub.c'))

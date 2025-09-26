@@ -440,6 +440,92 @@ void qemu_set_irq(qemu_irq irq, int level)
 6. **테스트 자동화 연계**
    - (선택) CI 스크립트에서 `scripts/irqlog-analyze.py` 출력을 파싱해 지정된 IRQ가 특정 스레드/코드 경로에서만 발생하는지 검증하는 규칙을 추가한다.
 
+### 4.8 Windows 커널 스케줄러 실시간 추적
+
+Windows 게스트 전용으로 동작하는 스케줄러 파서를 QEMU 내부에 내장하여, vCPU가 어떤 커널 스레드를 실행 중인지 QMP만으로 확인할 수 있도록 했다. 구현은 KDBG 기반 오프셋 자동 감지와 링 버퍼 기록, 전용 QMP 명령으로 구성된다.
+
+#### 4.8.1 기능 목표
+- vCPU가 커널 모드(CPL=0)에서 컨텍스트를 전환하는 시점에 `KTHREAD/ETHREAD`와 `EPROCESS` 포인터, PID/TID, 스레드 상태를 샘플링한다.
+- 2048엔트리 링 버퍼에 최신 이벤트를 보관하며, `query-windows-sched-trace`로 조회한다.
+- `windows-sched-trace-set`으로 기능을 토글하고, KDDEBUGGER_DATA64 자동 감지를 사용하거나 필요 시 수동 오버라이드를 입력한다.
+- Windows 11 24H2 (빌드 26100, `Win11_24H2_Korean_x64.iso`) 기준으로 기본 오프셋을 검증했다.
+
+#### 4.8.2 데이터 경로
+1. **핫패스 훅**: `accel/kvm/kvm-all.c`가 `kvm_arch_post_run()` 직후 `windows_sched_trace_post_run(cpu)`를 호출한다. 추적 비활성화 시에는 `qatomic_read()` 검사만 수행해 오버헤드를 억제한다.
+2. **샘플 수집** (`system/windows-sched-trace.c`): `TARGET_I386` 타깃에서만 활성화되며, `GS` 베이스를 통해 KPCR → KPRCB → KTHREAD 포인터를 추적한다. 이전에 관측한 스레드와 동일하면 큐에 추가하지 않아 중복을 줄인다.
+3. **링 버퍼**: IRQ 로거와 동일하게 `QemuMutex`로 보호된 고정 크기 배열을 사용한다. 문자열(`process-image`, `thread-name`)은 `g_strdup()`으로 소유권을 복사하고, 슬롯 재사용 시 해제한다.
+
+#### 4.8.3 QAPI 및 사용법
+`qapi/machine.json`은 다음 구조체와 명령을 정의한다.
+
+```json
+{ 'struct': 'WindowsSchedTraceOverrides',
+  'data': { '*kpcr-current-prcb': 'uint16',
+            '*prcb-current-thread': 'uint16',
+            '*kthread-apc-process': 'uint16',
+            '*kthread-client-id': 'uint16',
+            '*kthread-state': 'uint16',
+            '*ethread-thread-name': 'uint16',
+            '*eprocess-image-file-name': 'uint16' } }
+
+{ 'struct': 'WindowsSchedTraceEntry',
+  'data': { 'timestamp-ns': 'uint64', 'vcpu': 'int', 'thread-pointer': 'uint64',
+            '*process-pointer': 'uint64', '*unique-process-id': 'uint64',
+            '*unique-thread-id': 'uint64', '*kthread-state': 'int',
+            '*process-image': 'str', '*thread-name': 'str' } }
+
+{ 'command': 'windows-sched-trace-set',
+  'data': { 'enable': 'bool', '*auto-detect': 'bool',
+            '*overrides': 'WindowsSchedTraceOverrides' } }
+
+{ 'command': 'query-windows-sched-trace',
+  'data': { '*max-entries': 'uint16', '*filter-vcpu': 'uint16',
+            '*filter-pid': 'uint64', '*filter-tid': 'uint64' },
+  'returns': [ 'WindowsSchedTraceEntry' ] }
+```
+
+사용 예시:
+
+```bash
+{ "execute": "windows-sched-trace-set", "arguments": { "enable": true } }
+{ "execute": "query-windows-sched-trace", "arguments": { "max-entries": 16 } }
+```
+
+응답 항목에는 `timestamp-ns`, `vcpu`, `thread-pointer`는 물론 PID/TID(`unique-process-id`, `unique-thread-id`), `process-image`, `thread-name`, `kthread-state`가 포함될 수 있다.
+
+#### 4.8.4 자동 감지와 수동 오버라이드
+- **자동 모드(기본)**: KDDEBUGGER_DATA64 블록에서 PRCB/KTHREAD 관련 오프셋(`OffsetPcrCurrentPrcb`, `OffsetPrcbCurrentThread`, `OffsetKThreadApcProcess`, `OffsetKThreadState`)을 읽어 사용한다. KDBG 접근이 차단된 환경에서는 `offsets_ready` 플래그가 설정되지 않으며 샘플 기록도 생략된다.
+- **수동 모드**: `auto-detect=false`와 함께 오프셋을 지정한다. Windows 11 24H2 기본값은 아래 표와 같다.
+
+| 필드 | 값 | 설명 |
+|------|----|------|
+| `kpcr-current-prcb` | `0x180` | `KPCR->Prcb` 포인터 |
+| `prcb-current-thread` | `0x8` | `KPRCB->CurrentThread` |
+| `kthread-apc-process` | `0x220` | `KTHREAD.ApcState.Process` |
+| `kthread-client-id` | `0x878` | `ETHREAD.Cid` (UniqueProcess/Thread) |
+| `kthread-state` | `0x32c` | `KTHREAD.State` |
+| `ethread-thread-name` | `0x870` | `ETHREAD.ThreadName` (`UNICODE_STRING`) |
+| `eprocess-image-file-name` | `0x5a8` | `EPROCESS.ImageFileName` |
+
+Windbg/LiveKD 등을 이용해 빌드별 실제 레이아웃을 확인한 뒤 필요시 수정한다.
+
+#### 4.8.5 코드 구조 및 동시성
+- `system/windows-sched-trace.c`는 `WinSchedGlobalState` 구조체로 설정/링 버퍼/CPU 캐시를 관리한다.
+- `tracing_enabled`와 `offsets_ready`는 `qatomic_set()`으로 갱신해 KVM 핫패스에서 락을 잡지 않는다.
+- 문자열 변환은 GLib `g_utf16_to_utf8()`을 사용해 Unicode를 UTF-8로 변환한다.
+- 비 x86 빌드에서는 QMP 명령이 오류를 반환하고 훅은 빈 함수로 남는다.
+
+#### 4.8.6 검증 시나리오
+1. **기본 확인**: Windows 11 24H2 게스트에서 기능을 활성화하고, `System`, `Idle (CPU n)` 등 핵심 커널 스레드가 기록되는지 확인한다.
+2. **필터 테스트**: 사용자 워크로드(디스크 I/O, 네트워크)로 PID/TID 필터가 정상적으로 작동하는지 검증한다.
+3. **오토 ↔ 수동 비교**: KDBG 비활성화 정책 환경에서 자동 모드가 실패하는지 관찰하고, 동일 VM에 오버라이드를 주입했을 때 동작 여부를 비교한다.
+4. **성능 계측**: 컨텍스트 스위치가 많은 워크로드에서 추적 활성/비활성 시 vCPU 사용률을 측정하여 오버헤드를 정량화한다.
+
+#### 4.8.7 제한 사항
+- KVM 가속에 의존하며, TCG나 WHPX에서는 동작하지 않는다.
+- Windows 7/8 계열처럼 KDDEBUGGER_DATA64 필드 구성이 다른 버전에 대해서는 추가 검증이 필요하다.
+- 유저 모드 스레드 추적, 콜스택 복원, 심볼 서버 연계는 향후 과제로 남겨두었다.
+
 ---
 
 ## 7. 오디오 서브시스템 삭제 및 후속 처리
