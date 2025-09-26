@@ -18,6 +18,9 @@ struct IRQState {
 
 void qemu_set_irq(qemu_irq irq, int level);
 
+void qemu_irq_log_set_enabled(bool enable);
+bool qemu_irq_log_enabled(void);
+
 static inline void qemu_irq_raise(qemu_irq irq)
 {
     qemu_set_irq(irq, 1);

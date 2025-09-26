@@ -23,15 +23,36 @@
  */
 #include "qemu/osdep.h"
 #include "qemu/main-loop.h"
+#include "qemu/atomic.h"
+#include "qemu/error-report.h"
 #include "hw/irq.h"
 #include "qom/object.h"
+
+static int irq_log_enabled;
 
 void qemu_set_irq(qemu_irq irq, int level)
 {
     if (!irq)
         return;
 
+    if (qatomic_read(&irq_log_enabled)) {
+        int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
+        error_printf("irq-log: time=%" PRId64 "ns irq=%p handler=%p opaque=%p n=%d level=%d\n",
+                     now, irq, irq->handler, irq->opaque, irq->n, level);
+    }
+
     irq->handler(irq->opaque, irq->n, level);
+}
+
+void qemu_irq_log_set_enabled(bool enable)
+{
+    qatomic_set(&irq_log_enabled, enable);
+    error_printf("irq-log: %s\n", enable ? "enabled" : "disabled");
+}
+
+bool qemu_irq_log_enabled(void)
+{
+    return qatomic_read(&irq_log_enabled);
 }
 
 static void init_irq_fields(IRQState *irq, qemu_irq_handler handler,

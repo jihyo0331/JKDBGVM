@@ -896,6 +896,19 @@
   'returns': ['PhysMemPage'] }
 
 ##
+# @irq-log-set:
+#
+# Enable or disable real-time IRQ logging. When enabled, every call to
+# qemu_set_irq() prints a diagnostic line to the QEMU stderr stream.
+#
+# @enable: true to start logging, false to stop.
+#
+# Since: 9.1
+##
+{ 'command': 'irq-log-set',
+  'data': { 'enable': 'bool' } }
+
+##
 # @Memdev:
 #
 # Information about memory backend

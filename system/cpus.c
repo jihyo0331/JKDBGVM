@@ -48,6 +48,7 @@
 #include "system/cpu-timers.h"
 #include "system/whpx.h"
 #include "hw/boards.h"
+#include "hw/irq.h"
 #include "hw/hw.h"
 #include "trace.h"
 
@@ -908,6 +909,11 @@ PhysMemPageList *qmp_query_phys_pages(uint64_t addr, bool has_num_pages,
 
     g_free(buf);
     return head;
+}
+
+void qmp_irq_log_set(bool enable, Error **errp)
+{
+    qemu_irq_log_set_enabled(enable);
 }
 
 void qmp_memsave(uint64_t addr, uint64_t size, const char *filename,

@@ -47,6 +47,29 @@
 - 응답의 `rows` 배열에는 각 바이트가 `"0x0000000000001000 - 0xff"`와 같은 한 줄 문자열로 담겨 있습니다.
 - 더 큰 덤프가 필요할 경우 이 명령을 반복 호출해 페이지 단위로 이어 붙입니다.
 
-## 4. 빌드 및 활용 메모
+## 4. 실시간 IRQ 로깅 QMP 명령
+### 4.1 설계 개요
+- 목표는 QMP 요청 한 번으로 인터럽트 로깅을 켜고 끄는 것입니다. 그래서 공통 경로인 `qemu_set_irq()`에 최소한의 런타임 분기만 추가하고, 나머지는 QMP 핸들러에서 전역 플래그를 조정하도록 설계했습니다.
+
+### 4.2 QAPI 스키마와 핸들러
+1. `qapi/machine.json`에 `irq-log-set` 명령을 정의했습니다. 입력으로 `enable: bool` 하나만 받고 반환값은 없습니다. QAPI 재생성(`ninja -C build qapi-gen`) 후 자동 생성되는 `qmp_irq_log_set()` 스텁을 통해 C 코드에서 접근할 수 있습니다.
+2. `system/cpus.c`에서는 이 스텁을 구현하여 `qemu_irq_log_set_enabled(enable)`을 호출합니다. 향후 로깅 레벨이나 출력 채널을 확장하려면 이 부분에 추가 파라미터 검증과 라우팅을 넣으면 됩니다.
+
+### 4.3 IRQ 서브시스템 확장
+1. `include/hw/irq.h`에 토글 함수 프로토타입을 선언해 어떤 장치 코드에서도 로깅 상태를 확인하거나 변경할 수 있게 했습니다.
+2. `hw/core/irq.c`에는 `irq_log_enabled`라는 정수 전역을 두고 `qatomic_set/read()`로 접근합니다. QMP 스레드와 vCPU/IO 스레드가 동시에 만질 수 있으므로 원자성을 보장했습니다.
+3. `qemu_irq_log_set_enabled()`는 플래그를 갱신하고 즉시 `stderr`에 `irq-log: enabled|disabled`를 출력해 사용자가 토글 결과를 확인할 수 있게 합니다. 필요하면 `trace_irq_log_toggle` 같은 트레이스로 대체할 수 있습니다.
+4. `qemu_set_irq()`는 플래그가 켜져 있을 때만 로깅 코드를 실행합니다. 로깅 내용에는 실시간 타임스탬프(ns), IRQState 포인터, 핸들러/opaque 주소, IRQ 번호, 레벨이 포함되며 포맷은 `irq-log: time=...ns irq=... handler=... opaque=... n=... level=...`입니다.
+5. 플래그가 꺼져 있을 때의 오버헤드는 원자적 읽기 한 번뿐이며, 켜졌을 때는 `stderr` 출력 비용이 추가되므로 장시간 활성화 시 성능 영향 가능성이 있습니다.
+
+### 4.4 사용 예시
+```json
+{"execute":"irq-log-set","arguments":{"enable":true}}
+```
+- 위 명령을 보내면 즉시 로깅이 켜지고 이후 모든 `qemu_set_irq()` 호출이 `stderr`에 기록됩니다.
+- 같은 명령에 `enable:false`를 전달하면 로깅이 중단되고 `irq-log: disabled` 메시지가 출력됩니다.
+
+## 5. 빌드 및 활용 메모
 1. QAPI 스키마 변경 후에는 `meson setup build` (또는 기존 빌드 디렉터리)에서 `ninja -C build qapi-gen`을 실행해 생성 파일을 갱신합니다.
 2. 전체 빌드 후 KVM 게스트를 실행하여 스로틀 비율별 CPU 사용률과 `query-phys-pages` 명령 응답을 확인하세요.
+3. IRQ 로깅 명령을 토글한 뒤 `stderr`에서 `irq-log:` 라인을 확인해 동작을 검증할 수 있습니다.
