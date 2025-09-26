@@ -346,19 +346,6 @@ SRST
 ERST
 
     {
-        .name       = "capture",
-        .args_type  = "",
-        .params     = "",
-        .help       = "show capture information",
-        .cmd        = hmp_info_capture,
-    },
-
-SRST
-  ``info capture``
-    Show capture information.
-ERST
-
-    {
         .name       = "snapshots",
         .args_type  = "",
         .params     = "",

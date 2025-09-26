@@ -188,7 +188,7 @@ typedef struct TCGState {
 typedef struct {
     ISADevice parent_obj;
 
-    QEMUSoundCard card;
+    DeviceState device;
     uint32_t freq;
     uint32_t port;
     int ticking[2];
@@ -265,7 +265,7 @@ def test_initial_includes():
 
 #include "qemu/osdep.h"
 #include "hw/audio/soundhw.h"
-#include "audio/audio.h"
+#include "qemu/osdep.h"
 #include "hw/pci/pci.h"
 #include "migration/vmstate.h"
 #include "qemu/module.h"
@@ -279,4 +279,3 @@ def test_initial_includes():
     assert m
     print(repr(m.group(0)))
     assert m.group(0).endswith('#include "system/dma.h"\n')
-

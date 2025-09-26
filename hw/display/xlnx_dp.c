@@ -106,8 +106,6 @@
 #define DP_PHY_STATUS                       (0x0280 >> 2)
 
 #define DP_TX_AUDIO_CONTROL                 (0x0300 >> 2)
-#define DP_TX_AUD_CTRL                      (1)
-
 #define DP_TX_AUDIO_CHANNELS                (0x0304 >> 2)
 #define DP_TX_AUDIO_INFO_DATA(n)            ((0x0308 + 4 * n) >> 2)
 #define DP_TX_M_AUD                         (0x0328 >> 2)
@@ -207,8 +205,6 @@
 #define AUD_CH_STATUS_REG(n)                ((0x0008 + 4 * n) >> 2)
 #define AUD_CH_A_DATA_REG(n)                ((0x0020 + 4 * n) >> 2)
 #define AUD_CH_B_DATA_REG(n)                ((0x0038 + 4 * n) >> 2)
-
-#define DP_AUDIO_DMA_CHANNEL(n)             (4 + n)
 #define DP_GRAPHIC_DMA_CHANNEL              (3)
 #define DP_VIDEO_DMA_CHANNEL                (0)
 
@@ -313,117 +309,9 @@ static const MemoryRegionOps audio_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
-static inline uint32_t xlnx_dp_audio_get_volume(XlnxDPState *s,
-                                                uint8_t channel)
-{
-    switch (channel) {
-    case 0:
-        return extract32(s->audio_registers[AUDIO_MIXER_VOLUME_CONTROL], 0, 16);
-    case 1:
-        return extract32(s->audio_registers[AUDIO_MIXER_VOLUME_CONTROL], 16,
-                                                                         16);
-    default:
-        return 0;
-    }
-}
+/* Audio output is not modelled after subsystem removal. */
 
-static inline void xlnx_dp_audio_activate(XlnxDPState *s)
-{
-    bool activated = ((s->core_registers[DP_TX_AUDIO_CONTROL]
-                   & DP_TX_AUD_CTRL) != 0);
-    AUD_set_active_out(s->amixer_output_stream, activated);
-    xlnx_dpdma_set_host_data_location(s->dpdma, DP_AUDIO_DMA_CHANNEL(0),
-                                      &s->audio_buffer_0);
-    xlnx_dpdma_set_host_data_location(s->dpdma, DP_AUDIO_DMA_CHANNEL(1),
-                                      &s->audio_buffer_1);
-}
 
-static inline void xlnx_dp_audio_mix_buffer(XlnxDPState *s)
-{
-    /*
-     * Audio packets are signed and have this shape:
-     * | 16 | 16 | 16 | 16 | 16 | 16 | 16 | 16 |
-     * | R3 | L3 | R2 | L2 | R1 | L1 | R0 | L0 |
-     *
-     * Output audio is 16bits saturated.
-     */
-    int i;
-
-    if ((s->audio_data_available[0]) && (xlnx_dp_audio_get_volume(s, 0))) {
-        for (i = 0; i < s->audio_data_available[0] / 2; i++) {
-            s->temp_buffer[i] = (int64_t)(s->audio_buffer_0[i])
-                              * xlnx_dp_audio_get_volume(s, 0) / 8192;
-        }
-        s->byte_left = s->audio_data_available[0];
-    } else {
-        memset(s->temp_buffer, 0, s->audio_data_available[1] / 2);
-    }
-
-    if ((s->audio_data_available[1]) && (xlnx_dp_audio_get_volume(s, 1))) {
-        if ((s->audio_data_available[0] == 0)
-        || (s->audio_data_available[1] == s->audio_data_available[0])) {
-            for (i = 0; i < s->audio_data_available[1] / 2; i++) {
-                s->temp_buffer[i] += (int64_t)(s->audio_buffer_1[i])
-                                   * xlnx_dp_audio_get_volume(s, 1) / 8192;
-            }
-            s->byte_left = s->audio_data_available[1];
-        }
-    }
-
-    for (i = 0; i < s->byte_left / 2; i++) {
-        s->out_buffer[i] = MAX(-32767, MIN(s->temp_buffer[i], 32767));
-    }
-
-    s->data_ptr = 0;
-}
-
-static void xlnx_dp_audio_callback(void *opaque, int avail)
-{
-    /*
-     * Get the individual left and right audio streams from the DPDMA,
-     * and fill the output buffer with the combined stereo audio data
-     * adjusted by the volume controls.
-     * QEMU's audio subsystem will call this callback repeatedly;
-     * we return the data from the output buffer until it is emptied,
-     * and then we will read data from the DPDMA again.
-     */
-    XlnxDPState *s = XLNX_DP(opaque);
-    size_t written = 0;
-
-    if (s->byte_left == 0) {
-        s->audio_data_available[0] = xlnx_dpdma_start_operation(s->dpdma, 4,
-                                                                  true);
-        s->audio_data_available[1] = xlnx_dpdma_start_operation(s->dpdma, 5,
-                                                                  true);
-        xlnx_dp_audio_mix_buffer(s);
-    }
-
-    /* Send the buffer through the audio. */
-    if (s->byte_left <= MAX_QEMU_BUFFER_SIZE) {
-        if (s->byte_left != 0) {
-            written = AUD_write(s->amixer_output_stream,
-                                &s->out_buffer[s->data_ptr], s->byte_left);
-        } else {
-             int len_to_copy;
-            /*
-             * There is nothing to play.. We don't have any data! Fill the
-             * buffer with zero's and send it.
-             */
-            written = 0;
-            while (avail) {
-                len_to_copy = MIN(AUD_CHBUF_MAX_DEPTH, avail);
-                memset(s->out_buffer, 0, len_to_copy);
-                avail -= AUD_write(s->amixer_output_stream, s->out_buffer,
-                                   len_to_copy);
-            }
-        }
-    } else {
-        written = AUD_write(s->amixer_output_stream,
-                            &s->out_buffer[s->data_ptr], MAX_QEMU_BUFFER_SIZE);
-    }
-    s->byte_left -= written;
-    s->data_ptr += written;
-}
 
 /*
  * AUX channel related function.
@@ -877,11 +765,9 @@ static void xlnx_dp_write(void *opaque, hwaddr offset, uint64_t value,
         break;
     case DP_TX_AUDIO_CONTROL:
         s->core_registers[offset] = value & 0x00000001;
-        xlnx_dp_audio_activate(s);
         break;
     case DP_TX_AUDIO_CHANNELS:
         s->core_registers[offset] = value & 0x00000007;
-        xlnx_dp_audio_activate(s);
         break;
     case DP_INT_STATUS:
         s->core_registers[DP_INT_STATUS] &= ~value;
@@ -1304,11 +1190,6 @@ static void xlnx_dp_realize(DeviceState *dev, Error **errp)
 {
     XlnxDPState *s = XLNX_DP(dev);
     DisplaySurface *surface;
-    struct audsettings as;
-
-    if (!AUD_register_card("xlnx_dp.audio", &s->aud_card, errp)) {
-        return;
-    }
 
     aux_bus_realize(s->aux_bus);
 
@@ -1322,20 +1203,6 @@ static void xlnx_dp_realize(DeviceState *dev, Error **errp)
     surface = qemu_console_surface(s->console);
     xlnx_dpdma_set_host_data_location(s->dpdma, DP_GRAPHIC_DMA_CHANNEL,
                                       surface_data(surface));
-
-    as.freq = 44100;
-    as.nchannels = 2;
-    as.fmt = AUDIO_FORMAT_S16;
-    as.endianness = 0;
-
-    s->amixer_output_stream = AUD_open_out(&s->aud_card,
-                                           s->amixer_output_stream,
-                                           "xlnx_dp.audio.out",
-                                           s,
-                                           xlnx_dp_audio_callback,
-                                           &as);
-    AUD_set_volume_out(s->amixer_output_stream, 0, 255, 255);
-    xlnx_dp_audio_activate(s);
     s->vblank = ptimer_init(vblank_hit, s, DP_VBLANK_PTIMER_POLICY);
     ptimer_transaction_begin(s->vblank);
     ptimer_set_freq(s->vblank, 30);
@@ -1384,16 +1251,11 @@ static void xlnx_dp_reset(DeviceState *dev)
     s->avbufm_registers[AV_BUF_LIVE_GFX_COMP_SF(2)] = 0x00010101;
 
     memset(s->audio_registers, 0, sizeof(s->audio_registers));
-    s->byte_left = 0;
 
     xlnx_dp_aux_clear_rx_fifo(s);
     xlnx_dp_change_graphic_fmt(s);
     xlnx_dp_update_irq(s);
 }
-
-static const Property xlnx_dp_device_properties[] = {
-    DEFINE_AUDIO_PROPERTIES(XlnxDPState, aud_card),
-};
 
 static void xlnx_dp_class_init(ObjectClass *oc, const void *data)
 {
@@ -1402,7 +1264,6 @@ static void xlnx_dp_class_init(ObjectClass *oc, const void *data)
     dc->realize = xlnx_dp_realize;
     dc->vmsd = &vmstate_dp;
     device_class_set_legacy_reset(dc, xlnx_dp_reset);
-    device_class_set_props(dc, xlnx_dp_device_properties);
 }
 
 static const TypeInfo xlnx_dp_info = {

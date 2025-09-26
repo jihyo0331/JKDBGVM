@@ -22,7 +22,6 @@ config JAZZ
     select I8259
     select I8254
     select I8257
-    select PCSPK
     select VGA_MMIO
     select G364FB
     select DP8393X

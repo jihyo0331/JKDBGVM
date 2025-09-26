@@ -1055,38 +1055,13 @@ static int find_and_clear_dirty_height(VncState *vs,
 
 /*
  * Figure out how much pending data we should allow in the output
- * buffer before we throttle incremental display updates, and/or
- * drop audio samples.
- *
- * We allow for equiv of 1 full display's worth of FB updates,
- * and 1 second of audio samples. If audio backlog was larger
- * than that the client would already suffering awful audio
- * glitches, so dropping samples is no worse really).
+ * buffer before we throttle incremental display updates. We allow the
+ * equivalent of one full display's worth of framebuffer updates.
  */
 static void vnc_update_throttle_offset(VncState *vs)
 {
     size_t offset =
         vs->client_width * vs->client_height * vs->client_pf.bytes_per_pixel;
-
-    if (vs->audio_cap) {
-        int bps;
-        switch (vs->as.fmt) {
-        default:
-        case  AUDIO_FORMAT_U8:
-        case  AUDIO_FORMAT_S8:
-            bps = 1;
-            break;
-        case  AUDIO_FORMAT_U16:
-        case  AUDIO_FORMAT_S16:
-            bps = 2;
-            break;
-        case  AUDIO_FORMAT_U32:
-        case  AUDIO_FORMAT_S32:
-            bps = 4;
-            break;
-        }
-        offset += vs->as.freq * bps * vs->as.nchannels;
-    }
 
     /* Put a floor of 1MB on offset, so that if we have a large pending
      * buffer and the display is resized to a small size & back again
@@ -1097,7 +1072,7 @@ static void vnc_update_throttle_offset(VncState *vs)
     if (vs->throttle_output_offset != offset) {
         trace_vnc_client_throttle_threshold(
             vs, vs->ioc, vs->throttle_output_offset, offset, vs->client_width,
-            vs->client_height, vs->client_pf.bytes_per_pixel, vs->audio_cap);
+            vs->client_height, vs->client_pf.bytes_per_pixel);
     }
 
     vs->throttle_output_offset = offset;
@@ -1210,86 +1185,6 @@ static int vnc_update_client(VncState *vs, int has_dirty)
     return n;
 }
 
-/* audio */
-static void audio_capture_notify(void *opaque, audcnotification_e cmd)
-{
-    VncState *vs = opaque;
-
-    assert(vs->magic == VNC_MAGIC);
-    switch (cmd) {
-    case AUD_CNOTIFY_DISABLE:
-        trace_vnc_msg_server_audio_end(vs, vs->ioc);
-        vnc_lock_output(vs);
-        vnc_write_u8(vs, VNC_MSG_SERVER_QEMU);
-        vnc_write_u8(vs, VNC_MSG_SERVER_QEMU_AUDIO);
-        vnc_write_u16(vs, VNC_MSG_SERVER_QEMU_AUDIO_END);
-        vnc_unlock_output(vs);
-        vnc_flush(vs);
-        break;
-
-    case AUD_CNOTIFY_ENABLE:
-        trace_vnc_msg_server_audio_begin(vs, vs->ioc);
-        vnc_lock_output(vs);
-        vnc_write_u8(vs, VNC_MSG_SERVER_QEMU);
-        vnc_write_u8(vs, VNC_MSG_SERVER_QEMU_AUDIO);
-        vnc_write_u16(vs, VNC_MSG_SERVER_QEMU_AUDIO_BEGIN);
-        vnc_unlock_output(vs);
-        vnc_flush(vs);
-        break;
-    }
-}
-
-static void audio_capture_destroy(void *opaque)
-{
-}
-
-static void audio_capture(void *opaque, const void *buf, int size)
-{
-    VncState *vs = opaque;
-
-    assert(vs->magic == VNC_MAGIC);
-    trace_vnc_msg_server_audio_data(vs, vs->ioc, buf, size);
-    vnc_lock_output(vs);
-    if (vs->output.offset < vs->throttle_output_offset) {
-        vnc_write_u8(vs, VNC_MSG_SERVER_QEMU);
-        vnc_write_u8(vs, VNC_MSG_SERVER_QEMU_AUDIO);
-        vnc_write_u16(vs, VNC_MSG_SERVER_QEMU_AUDIO_DATA);
-        vnc_write_u32(vs, size);
-        vnc_write(vs, buf, size);
-    } else {
-        trace_vnc_client_throttle_audio(vs, vs->ioc, vs->output.offset);
-    }
-    vnc_unlock_output(vs);
-    vnc_flush(vs);
-}
-
-static void audio_add(VncState *vs)
-{
-    struct audio_capture_ops ops;
-
-    if (vs->audio_cap) {
-        error_report("audio already running");
-        return;
-    }
-
-    ops.notify = audio_capture_notify;
-    ops.destroy = audio_capture_destroy;
-    ops.capture = audio_capture;
-
-    vs->audio_cap = AUD_add_capture(vs->vd->audio_state, &vs->as, &ops, vs);
-    if (!vs->audio_cap) {
-        error_report("Failed to add audio capture");
-    }
-}
-
-static void audio_del(VncState *vs)
-{
-    if (vs->audio_cap) {
-        AUD_del_capture(vs->audio_cap, vs);
-        vs->audio_cap = NULL;
-    }
-}
-
 static void vnc_disconnect_start(VncState *vs)
 {
     if (vs->disconnecting) {
@@ -1328,7 +1223,6 @@ void vnc_disconnect_finish(VncState *vs)
 #ifdef CONFIG_VNC_SASL
     vnc_sasl_client_cleanup(vs);
 #endif /* CONFIG_VNC_SASL */
-    audio_del(vs);
     qkbd_state_lift_all_keys(vs->vd->kbd);
 
     if (vs->mouse_mode_notifier.notify != NULL) {
@@ -1661,10 +1555,10 @@ void vnc_write(VncState *vs, const void *data, size_t len)
     /* Protection against malicious client/guest to prevent our output
      * buffer growing without bound if client stops reading data. This
      * should rarely trigger, because we have earlier throttling code
-     * which stops issuing framebuffer updates and drops audio data
-     * if the throttle_output_offset value is exceeded. So we only reach
-     * this higher level if a huge number of pseudo-encodings get
-     * triggered while data can't be sent on the socket.
+     * which stops issuing framebuffer updates if the
+     * throttle_output_offset value is exceeded. So we only reach this
+     * higher level if a huge number of pseudo-encodings get triggered
+     * while data can't be sent on the socket.
      *
      * NB throttle_output_offset can be zero during early protocol
      * handshake, or from the job thread's VncState clone
@@ -2093,20 +1987,6 @@ static void send_ext_key_event_ack(VncState *vs)
     vnc_flush(vs);
 }
 
-static void send_ext_audio_ack(VncState *vs)
-{
-    vnc_lock_output(vs);
-    vnc_write_u8(vs, VNC_MSG_SERVER_FRAMEBUFFER_UPDATE);
-    vnc_write_u8(vs, 0);
-    vnc_write_u16(vs, 1);
-    vnc_framebuffer_update(vs, 0, 0,
-                           pixman_image_get_width(vs->vd->server),
-                           pixman_image_get_height(vs->vd->server),
-                           VNC_ENCODING_AUDIO);
-    vnc_unlock_output(vs);
-    vnc_flush(vs);
-}
-
 static void send_xvp_message(VncState *vs, int code)
 {
     vnc_lock_output(vs);
@@ -2191,12 +2071,6 @@ static void set_encodings(VncState *vs, int32_t *encodings, size_t n_encodings)
             break;
         case VNC_ENCODING_EXT_KEY_EVENT:
             send_ext_key_event_ack(vs);
-            break;
-        case VNC_ENCODING_AUDIO:
-            if (vs->vd->audio_state) {
-                vnc_set_feature(vs, VNC_FEATURE_AUDIO);
-                send_ext_audio_ack(vs);
-            }
             break;
         case VNC_ENCODING_WMVi:
             vnc_set_feature(vs, VNC_FEATURE_WMVI);
@@ -2390,7 +2264,6 @@ static int protocol_client_msg(VncState *vs, uint8_t *data, size_t len)
 {
     int i;
     uint16_t limit;
-    uint32_t freq;
     VncDisplay *vd = vs->vd;
 
     if (data[0] > 3) {
@@ -2561,68 +2434,6 @@ static int protocol_client_msg(VncState *vs, uint8_t *data, size_t len)
             ext_key_event(vs, read_u16(data, 2),
                           read_u32(data, 4), read_u32(data, 8));
             break;
-        case VNC_MSG_CLIENT_QEMU_AUDIO:
-            if (!vnc_has_feature(vs, VNC_FEATURE_AUDIO)) {
-                error_report("Audio message %d with audio disabled", read_u8(data, 2));
-                vnc_client_error(vs);
-                break;
-            }
-
-            if (len == 2)
-                return 4;
-
-            switch (read_u16 (data, 2)) {
-            case VNC_MSG_CLIENT_QEMU_AUDIO_ENABLE:
-                trace_vnc_msg_client_audio_enable(vs, vs->ioc);
-                audio_add(vs);
-                break;
-            case VNC_MSG_CLIENT_QEMU_AUDIO_DISABLE:
-                trace_vnc_msg_client_audio_disable(vs, vs->ioc);
-                audio_del(vs);
-                break;
-            case VNC_MSG_CLIENT_QEMU_AUDIO_SET_FORMAT:
-                if (len == 4)
-                    return 10;
-                switch (read_u8(data, 4)) {
-                case 0: vs->as.fmt = AUDIO_FORMAT_U8; break;
-                case 1: vs->as.fmt = AUDIO_FORMAT_S8; break;
-                case 2: vs->as.fmt = AUDIO_FORMAT_U16; break;
-                case 3: vs->as.fmt = AUDIO_FORMAT_S16; break;
-                case 4: vs->as.fmt = AUDIO_FORMAT_U32; break;
-                case 5: vs->as.fmt = AUDIO_FORMAT_S32; break;
-                default:
-                    VNC_DEBUG("Invalid audio format %d\n", read_u8(data, 4));
-                    vnc_client_error(vs);
-                    break;
-                }
-                vs->as.nchannels = read_u8(data, 5);
-                if (vs->as.nchannels != 1 && vs->as.nchannels != 2) {
-                    VNC_DEBUG("Invalid audio channel count %d\n",
-                              read_u8(data, 5));
-                    vnc_client_error(vs);
-                    break;
-                }
-                freq = read_u32(data, 6);
-                /* No official limit for protocol, but 48khz is a sensible
-                 * upper bound for trustworthy clients, and this limit
-                 * protects calculations involving 'vs->as.freq' later.
-                 */
-                if (freq > 48000) {
-                    VNC_DEBUG("Invalid audio frequency %u > 48000", freq);
-                    vnc_client_error(vs);
-                    break;
-                }
-                vs->as.freq = freq;
-                trace_vnc_msg_client_audio_format(
-                    vs, vs->ioc, vs->as.fmt, vs->as.nchannels, vs->as.freq);
-                break;
-            default:
-                VNC_DEBUG("Invalid audio message %d\n", read_u8(data, 2));
-                vnc_client_error(vs);
-                break;
-            }
-            break;
-
         default:
             VNC_DEBUG("Msg: %d\n", read_u16(data, 0));
             vnc_client_error(vs);
@@ -3365,11 +3176,6 @@ static void vnc_connect(VncDisplay *vd, QIOChannelSocket *sioc,
     vs->last_x = -1;
     vs->last_y = -1;
 
-    vs->as.freq = 44100;
-    vs->as.nchannels = 2;
-    vs->as.fmt = AUDIO_FORMAT_S16;
-    vs->as.endianness = 0;
-
     qemu_mutex_init(&vs->output_mutex);
     vs->bh = qemu_bh_new(vnc_jobs_bh, vs);
 
@@ -3641,9 +3447,6 @@ static QemuOptsList qemu_vnc_opts = {
         },{
             .name = "non-adaptive",
             .type = QEMU_OPT_BOOL,
-        },{
-            .name = "audiodev",
-            .type = QEMU_OPT_STRING,
         },{
             .name = "power-control",
             .type = QEMU_OPT_BOOL,
@@ -4076,7 +3879,6 @@ void vnc_display_open(const char *id, Error **errp)
     const char *saslauthz;
     int lock_key_sync = 1;
     int key_delay_ms;
-    const char *audiodev;
     const char *passwordSecret;
 
     if (!vd) {
@@ -4233,16 +4035,6 @@ void vnc_display_open(const char *id, Error **errp)
         vd->led = qemu_add_led_event_handler(kbd_leds, vd);
     }
     vd->ledstate = 0;
-
-    audiodev = qemu_opt_get(opts, "audiodev");
-    if (audiodev) {
-        vd->audio_state = audio_state_by_name(audiodev, errp);
-        if (!vd->audio_state) {
-            goto fail;
-        }
-    } else {
-        vd->audio_state = audio_get_default_audio_state(NULL);
-    }
 
     device_id = qemu_opt_get(opts, "display");
     if (device_id) {

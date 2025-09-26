@@ -34,7 +34,6 @@ config Q800
     select OR_IRQ
     select DJMEMC
     select IOSB
-    select ASC
 
 config M68K_VIRT
     bool

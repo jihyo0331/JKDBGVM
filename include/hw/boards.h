@@ -31,7 +31,6 @@ extern MachineState *current_machine;
  */
 const char *machine_class_default_cpu_type(MachineClass *mc);
 
-void machine_add_audiodev_property(MachineClass *mc);
 void machine_run_board_init(MachineState *machine, const char *mem_path, Error **errp);
 bool machine_usb(MachineState *machine);
 int machine_phandle_start(MachineState *machine);
@@ -419,14 +418,6 @@ struct MachineState {
      */
     MemoryRegion *ram;
     DeviceMemoryState *device_memory;
-
-    /*
-     * Included in MachineState for simplicity, but not supported
-     * unless machine_add_audiodev_property is called.  Boards
-     * that have embedded audio devices can call it from the
-     * machine init function and forward the property to the device.
-     */
-    char *audiodev;
 
     ram_addr_t ram_size;
     ram_addr_t maxram_size;

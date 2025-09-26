@@ -1376,15 +1376,12 @@
 # @p2p: Whether to use peer-to-peer connections (accepted through
 #     `add_client`).
 #
-# @audiodev: Use the specified DBus audiodev to export audio.
-#
 # Since: 7.0
 ##
 { 'struct'  : 'DisplayDBus',
   'data'    : { '*rendernode' : 'str',
                 '*addr': 'str',
-                '*p2p': 'bool',
-                '*audiodev': 'str' } }
+                '*p2p': 'bool' } }
 
 ##
 # @DisplayGLMode:

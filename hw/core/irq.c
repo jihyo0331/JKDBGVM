@@ -27,6 +27,30 @@
 #include "qemu/error-report.h"
 #include "hw/irq.h"
 #include "qom/object.h"
+#ifdef CONFIG_ARM_GIC
+#include "hw/intc/arm_gic_common.h"
+#endif
+#include "qemu/timer.h"
+
+static const char *irq_classification(IRQState *irq)
+{
+#ifdef CONFIG_ARM_GIC
+    for (Object *obj = OBJECT(irq); obj; obj = obj->parent) {
+        if (object_dynamic_cast(obj, TYPE_ARM_GIC_COMMON)) {
+            if (irq->n < 16) {
+                return "software (SGI)";
+            }
+            if (irq->n < 32) {
+                return "percpu (PPI)";
+            }
+
+            return "hardware (SPI)";
+        }
+    }
+#endif
+
+    return "hardware";
+}
 
 static int irq_log_enabled;
 
@@ -37,8 +61,15 @@ void qemu_set_irq(qemu_irq irq, int level)
 
     if (qatomic_read(&irq_log_enabled)) {
         int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
-        error_printf("irq-log: time=%" PRId64 "ns irq=%p handler=%p opaque=%p n=%d level=%d\n",
-                     now, irq, irq->handler, irq->opaque, irq->n, level);
+        char *path = object_get_canonical_path(OBJECT(irq));
+
+        error_printf("irq-log: time=%" PRId64 "ns level=%d n=%d kind=%s\n"
+                     "         path=%s\n"
+                     "         irq=%p handler=%p opaque=%p\n",
+                     now, level, irq->n, irq_classification(irq),
+                     path ? path : "(anonymous)", irq, irq->handler,
+                     irq->opaque);
+        g_free(path);
     }
 
     irq->handler(irq->opaque, irq->n, level);

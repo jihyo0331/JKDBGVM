@@ -28,7 +28,6 @@
 #include "hw/i2c/bitbang_i2c.h"
 #include "hw/irq.h"
 #include "hw/or-irq.h"
-#include "hw/audio/wm8750.h"
 #include "system/block-backend.h"
 #include "system/runstate.h"
 #include "system/dma.h"
@@ -36,7 +35,6 @@
 #include "qemu/cutils.h"
 #include "qom/object.h"
 #include "hw/net/mv88w8618_eth.h"
-#include "audio/audio.h"
 #include "qemu/error-report.h"
 #include "target/arm/cpu-qom.h"
 
@@ -1203,7 +1201,6 @@ static void musicpal_init(MachineState *machine)
     DeviceState *i2c_dev;
     DeviceState *lcd_dev;
     DeviceState *key_dev;
-    I2CSlave *wm8750_dev;
     SysBusDevice *s;
     I2CBus *i2c;
     int i;
@@ -1316,20 +1313,6 @@ static void musicpal_init(MachineState *machine)
         qdev_connect_gpio_out(key_dev, i, qdev_get_gpio_in(dev, i + 15));
     }
 
-    wm8750_dev = i2c_slave_new(TYPE_WM8750, MP_WM_ADDR);
-    if (machine->audiodev) {
-        qdev_prop_set_string(DEVICE(wm8750_dev), "audiodev", machine->audiodev);
-    }
-    i2c_slave_realize_and_unref(wm8750_dev, i2c, &error_abort);
-
-    dev = qdev_new(TYPE_MV88W8618_AUDIO);
-    s = SYS_BUS_DEVICE(dev);
-    object_property_set_link(OBJECT(dev), "wm8750", OBJECT(wm8750_dev),
-                             NULL);
-    sysbus_realize_and_unref(s, &error_fatal);
-    sysbus_mmio_map(s, 0, MP_AUDIO_BASE);
-    sysbus_connect_irq(s, 0, qdev_get_gpio_in(pic, MP_AUDIO_IRQ));
-
     musicpal_binfo.ram_size = MP_RAM_DEFAULT_SIZE;
     arm_load_kernel(cpu, machine, &musicpal_binfo);
 }
@@ -1343,7 +1326,6 @@ static void musicpal_machine_init(MachineClass *mc)
     mc->default_ram_size = MP_RAM_DEFAULT_SIZE;
     mc->default_ram_id = "musicpal.ram";
 
-    machine_add_audiodev_property(mc);
 }
 
 DEFINE_MACHINE("musicpal", musicpal_machine_init)

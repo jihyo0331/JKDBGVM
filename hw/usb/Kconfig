@@ -95,11 +95,6 @@ config USB_STORAGE_UAS
     depends on USB
     select SCSI
 
-config USB_AUDIO
-    bool
-    default y
-    depends on USB
-
 config USB_SERIAL
     bool
     default y

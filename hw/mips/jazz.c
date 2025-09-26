@@ -41,7 +41,6 @@
 #include "hw/timer/i8254.h"
 #include "hw/display/vga.h"
 #include "hw/display/bochs-vbe.h"
-#include "hw/audio/pcspk.h"
 #include "hw/input/i8042.h"
 #include "hw/sysbus.h"
 #include "system/qtest.h"
@@ -184,7 +183,6 @@ static void mips_jazz_init(MachineState *machine,
     SysBusDevice *sysbus;
     ISABus *isa_bus;
     ISADevice *pit;
-    ISADevice *pcspk;
     DriveInfo *fds[MAX_FD];
     MemoryRegion *bios = g_new(MemoryRegion, 1);
     MemoryRegion *bios2 = g_new(MemoryRegion, 1);
@@ -289,10 +287,6 @@ static void mips_jazz_init(MachineState *machine,
     isa_bus_register_input_irqs(isa_bus, i8259);
     i8257_dma_init(OBJECT(rc4030), isa_bus, 0);
     pit = i8254_pit_init(isa_bus, 0x40, 0, NULL);
-    pcspk = isa_new(TYPE_PC_SPEAKER);
-    object_property_set_link(OBJECT(pcspk), "pit", OBJECT(pit), &error_fatal);
-    isa_realize_and_unref(pcspk, isa_bus, &error_fatal);
-
     /* Video card */
     switch (jazz_model) {
     case JAZZ_MAGNUM:

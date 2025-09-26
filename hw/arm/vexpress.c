@@ -44,7 +44,6 @@
 #include "hw/sd/sd.h"
 #include "qobject/qlist.h"
 #include "qom/object.h"
-#include "audio/audio.h"
 #include "target/arm/cpu-qom.h"
 
 #define VEXPRESS_BOARD_ID 0x8e0
@@ -545,7 +544,7 @@ static void vexpress_common_init(MachineState *machine)
     VexpressMachineState *vms = VEXPRESS_MACHINE(machine);
     VexpressMachineClass *vmc = VEXPRESS_MACHINE_GET_CLASS(machine);
     VEDBoardInfo *daughterboard = vmc->daughterboard;
-    DeviceState *dev, *sysctl, *pl041;
+    DeviceState *dev, *sysctl;
     qemu_irq pic[GIC_EXT_IRQS];
     uint32_t sys_id;
     DriveInfo *dinfo;
@@ -613,15 +612,6 @@ static void vexpress_common_init(MachineState *machine)
 
     /* VE_SP810: not modelled */
     /* VE_SERIALPCI: not modelled */
-
-    pl041 = qdev_new("pl041");
-    qdev_prop_set_uint32(pl041, "nc_fifo_depth", 512);
-    if (machine->audiodev) {
-        qdev_prop_set_string(pl041, "audiodev", machine->audiodev);
-    }
-    sysbus_realize_and_unref(SYS_BUS_DEVICE(pl041), &error_fatal);
-    sysbus_mmio_map(SYS_BUS_DEVICE(pl041), 0, map[VE_PL041]);
-    sysbus_connect_irq(SYS_BUS_DEVICE(pl041), 0, pic[11]);
 
     dev = sysbus_create_varargs("pl181", map[VE_MMCI], pic[9], pic[10], NULL);
     /* Wire up MMC card detect and read-only signals */
@@ -787,7 +777,6 @@ static void vexpress_class_init(ObjectClass *oc, const void *data)
     mc->ignore_memory_transaction_failures = true;
     mc->default_ram_id = "vexpress.highmem";
 
-    machine_add_audiodev_property(mc);
     object_class_property_add_bool(oc, "secure", vexpress_get_secure,
                                    vexpress_set_secure);
     object_class_property_set_description(oc, "secure",

@@ -663,7 +663,6 @@ VirtioDeviceFeatures *qmp_decode_features(uint16_t device_id, uint64_t bitmap)
     case VIRTIO_ID_CAIF:
     case VIRTIO_ID_SIGNAL_DIST:
     case VIRTIO_ID_PSTORE:
-    case VIRTIO_ID_SOUND:
     case VIRTIO_ID_BT:
     case VIRTIO_ID_RPMB:
     case VIRTIO_ID_VIDEO_ENCODER:
@@ -674,7 +673,6 @@ VirtioDeviceFeatures *qmp_decode_features(uint16_t device_id, uint64_t bitmap)
     case VIRTIO_ID_CAN:
     case VIRTIO_ID_DMABUF:
     case VIRTIO_ID_PARAM_SERV:
-    case VIRTIO_ID_AUDIO_POLICY:
         break;
     default:
         g_assert_not_reached();

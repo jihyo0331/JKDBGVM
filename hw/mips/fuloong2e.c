@@ -288,12 +288,6 @@ static void mips_fuloong2e_init(MachineState *machine)
     pci_dev = pci_new_multifunction(PCI_DEVFN(FULOONG2E_VIA_SLOT, 0),
                                     TYPE_VT82C686B_ISA);
 
-    /* Set properties on individual devices before realizing the south bridge */
-    if (machine->audiodev) {
-        dev = DEVICE(object_resolve_path_component(OBJECT(pci_dev), "ac97"));
-        qdev_prop_set_string(dev, "audiodev", machine->audiodev);
-    }
-
     pci_realize_and_unref(pci_dev, pci_bus, &error_abort);
 
     object_property_add_alias(OBJECT(machine), "rtc-time",
@@ -334,7 +328,6 @@ static void mips_fuloong2e_machine_init(MachineClass *mc)
     mc->default_cpu_type = MIPS_CPU_TYPE_NAME("Loongson-2E");
     mc->default_ram_size = 256 * MiB;
     mc->default_ram_id = "fuloong2e.ram";
-    machine_add_audiodev_property(mc);
 }
 
 DEFINE_MACHINE("fuloong2e", mips_fuloong2e_machine_init)

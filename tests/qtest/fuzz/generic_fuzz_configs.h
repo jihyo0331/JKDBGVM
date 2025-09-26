@@ -104,14 +104,6 @@ const generic_fuzz_config predefined_configs[] = {
         .args = "-machine q35 -nodefaults -device bochs-display",
         .objects = "bochs*",
     },{
-        .name = "intel-hda",
-        .args = "-machine q35 -nodefaults -device intel-hda,id=hda0 "
-        "-audiodev driver=none,id=audio0",
-        "-device hda-output,bus=hda0.0,audiodev=audio0 "
-        "-device hda-micro,bus=hda0.0,audiodev=audio0 "
-        "-device hda-duplex,bus=hda0.0,audiodev=audio0",
-        .objects = "intel-hda",
-    },{
         .name = "ide-hd",
         .args = "-machine pc -nodefaults "
         "-drive file=null-co://,if=none,format=raw,id=disk0 "
@@ -141,18 +133,6 @@ const generic_fuzz_config predefined_configs[] = {
         "-drive id=disk0,file=null-co://,file.read-zeroes=on,if=none,format=raw "
         "-device floppy,drive=disk0,drive-type=288",
         .objects = "fd* floppy* i8257",
-    },{
-        .name = "xhci",
-        .args = "-machine q35 -nodefaults "
-        "-drive file=null-co://,if=none,format=raw,id=disk0 "
-        "-device qemu-xhci,id=xhci -device usb-tablet,bus=xhci.0 "
-        "-device usb-bot -device usb-storage,drive=disk0 "
-        "-chardev null,id=cd0 -chardev null,id=cd1 "
-        "-device usb-braille,chardev=cd0 -device usb-ccid -device usb-ccid "
-        "-device usb-kbd -device usb-mouse -device usb-serial,chardev=cd1 "
-        "-device usb-tablet -device usb-wacom-tablet "
-        "-device usb-audio,audiodev=snd0 -audiodev none,id=snd0",
-        .objects = "*usb* *uhci* *xhci*",
     },{
         .name = "pc-i440fx",
         .args = "-machine pc",
@@ -222,26 +202,6 @@ const generic_fuzz_config predefined_configs[] = {
                  "-drive id=disk0,if=none,file=null-co://,format=raw "
                  "-nodefaults",
         .objects = "*esp* *scsi* *am53c974*",
-    },{
-        .name = "ac97",
-        .args = "-machine q35 -nodefaults "
-        "-device ac97,audiodev=snd0 -audiodev none,id=snd0 -nodefaults",
-        .objects = "ac97*",
-    },{
-        .name = "cs4231a",
-        .args = "-machine q35 -nodefaults "
-        "-device cs4231a,audiodev=snd0 -audiodev none,id=snd0 -nodefaults",
-        .objects = "cs4231a* i8257*",
-    },{
-        .name = "es1370",
-        .args = "-machine q35 -nodefaults "
-        "-device es1370,audiodev=snd0 -audiodev none,id=snd0 -nodefaults",
-        .objects = "es1370*",
-    },{
-        .name = "sb16",
-        .args = "-machine q35 -nodefaults "
-        "-device sb16,audiodev=snd0 -audiodev none,id=snd0 -nodefaults",
-        .objects = "sb16* i8257*",
     },{
         .name = "parallel",
         .args = "-machine q35 -nodefaults "

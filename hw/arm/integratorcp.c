@@ -26,7 +26,6 @@
 #include "hw/irq.h"
 #include "hw/sd/sd.h"
 #include "qom/object.h"
-#include "audio/audio.h"
 #include "target/arm/cpu-qom.h"
 
 #define TYPE_INTEGRATOR_CM "integrator_core"
@@ -658,14 +657,6 @@ static void integratorcp_init(MachineState *machine)
                                &error_fatal);
     }
 
-    dev = qdev_new("pl041");
-    if (machine->audiodev) {
-        qdev_prop_set_string(dev, "audiodev", machine->audiodev);
-    }
-    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
-    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0x1d000000);
-    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, pic[25]);
-
     if (qemu_find_nic_info("smc91c111", true, NULL)) {
         smc91c111_init(0xc8000000, pic[27]);
     }
@@ -690,7 +681,6 @@ static void integratorcp_machine_init(MachineClass *mc)
     mc->default_ram_id = "integrator.ram";
     mc->auto_create_sdcard = true;
 
-    machine_add_audiodev_property(mc);
 }
 
 DEFINE_MACHINE("integratorcp", integratorcp_machine_init)

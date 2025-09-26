@@ -178,7 +178,6 @@ const char *virtio_device_names[] = {
     [VIRTIO_ID_PSTORE] = "virtio-pstore",
     [VIRTIO_ID_IOMMU] = "virtio-iommu",
     [VIRTIO_ID_MEM] = "virtio-mem",
-    [VIRTIO_ID_SOUND] = "virtio-sound",
     [VIRTIO_ID_FS] = "virtio-user-fs",
     [VIRTIO_ID_PMEM] = "virtio-pmem",
     [VIRTIO_ID_RPMB] = "virtio-rpmb",
@@ -192,7 +191,6 @@ const char *virtio_device_names[] = {
     [VIRTIO_ID_CAN] = "virtio-can",
     [VIRTIO_ID_DMABUF] = "virtio-dmabuf",
     [VIRTIO_ID_PARAM_SERV] = "virtio-param-serv",
-    [VIRTIO_ID_AUDIO_POLICY] = "virtio-audio-pol",
     [VIRTIO_ID_BT] = "virtio-bluetooth",
     [VIRTIO_ID_GPIO] = "virtio-gpio"
 };

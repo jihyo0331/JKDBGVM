@@ -11,7 +11,6 @@ config I82378
     select I8254
     select I82374
     select MC146818RTC
-    select PCSPK
 
 config ISA_SUPERIO
     bool

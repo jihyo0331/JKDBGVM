@@ -23,7 +23,6 @@
  */
 
 #include "qemu/osdep.h"
-#include "audio/audio.h"
 #include "block/block.h"
 #include "block/export.h"
 #include "chardev/char.h"
@@ -997,7 +996,6 @@ void qemu_cleanup(int status)
     /* vhost-user must be cleaned up before chardevs.  */
     tpm_cleanup();
     net_cleanup();
-    audio_cleanup();
     monitor_cleanup();
     qemu_chr_cleanup();
     user_creatable_cleanup();

@@ -66,7 +66,6 @@
 { 'include': 'misc.json' }
 { 'include': 'misc-arm.json' }
 { 'include': 'misc-i386.json' }
-{ 'include': 'audio.json' }
 { 'include': 'acpi.json' }
 { 'include': 'pci.json' }
 { 'include': 'stats.json' }

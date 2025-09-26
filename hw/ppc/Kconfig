@@ -103,7 +103,6 @@ config PREP
     depends on PPC
     imply PCI_DEVICES
     imply TEST_DEVICES
-    select CS4231A
     select RAVEN_PCI
     select I82378
     select LSI_SCSI_PCI

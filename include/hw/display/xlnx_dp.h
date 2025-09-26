@@ -33,12 +33,8 @@
 #include "qemu/fifo8.h"
 #include "qemu/units.h"
 #include "hw/dma/xlnx_dpdma.h"
-#include "audio/audio.h"
 #include "qom/object.h"
 #include "hw/ptimer.h"
-
-#define AUD_CHBUF_MAX_DEPTH                 (32 * KiB)
-#define MAX_QEMU_BUFFER_SIZE                (4 * KiB)
 
 #define DP_CORE_REG_OFFSET                  (0x0000)
 #define DP_CORE_REG_ARRAY_SIZE              (0x3B0 >> 2)
@@ -83,16 +79,6 @@ struct XlnxDPState {
     struct PixmanPlane g_plane;
     struct PixmanPlane v_plane;
     struct PixmanPlane bout_plane;
-
-    QEMUSoundCard aud_card;
-    SWVoiceOut *amixer_output_stream;
-    int16_t audio_buffer_0[AUD_CHBUF_MAX_DEPTH];
-    int16_t audio_buffer_1[AUD_CHBUF_MAX_DEPTH];
-    size_t audio_data_available[2];
-    int64_t temp_buffer[AUD_CHBUF_MAX_DEPTH];
-    int16_t out_buffer[AUD_CHBUF_MAX_DEPTH];
-    size_t byte_left; /* byte available in out_buffer. */
-    size_t data_ptr;  /* next byte to be sent to QEMU. */
 
     /* Associated DPDMA controller. */
     XlnxDPDMAState *dpdma;

@@ -39,7 +39,6 @@
 #include "hw/intc/i8259.h"
 #include "hw/timer/i8254.h"
 #include "hw/input/i8042.h"
-#include "hw/audio/pcspk.h"
 #include "system/system.h"
 #include "system/xen.h"
 #include "system/reset.h"
@@ -254,7 +253,6 @@ GlobalProperty pc_compat_2_7[] = {
     { "Opteron_G3" "-" TYPE_X86_CPU, "family", "15" },
     { "Opteron_G3" "-" TYPE_X86_CPU, "model", "6" },
     { "Opteron_G3" "-" TYPE_X86_CPU, "stepping", "1" },
-    { "isa-pcspk", "migrate", "off" },
 };
 const size_t pc_compat_2_7_len = G_N_ELEMENTS(pc_compat_2_7);
 
@@ -1209,9 +1207,6 @@ void pc_basic_device_init(struct PCMachineState *pcms,
             /* connect PIT to output control line of the HPET */
             qdev_connect_gpio_out(hpet, 0, qdev_get_gpio_in(DEVICE(pit), 0));
         }
-        object_property_set_link(OBJECT(pcms->pcspk), "pit",
-                                 OBJECT(pit), &error_fatal);
-        isa_realize_and_unref(pcms->pcspk, isa_bus, &error_fatal);
     }
 
     if (pcms->vmport == ON_OFF_AUTO_AUTO) {
@@ -1688,9 +1683,6 @@ static void pc_machine_initfn(Object *obj)
     pcms->default_bus_bypass_iommu = false;
 
     pc_system_flash_create(pcms);
-    pcms->pcspk = isa_new(TYPE_PC_SPEAKER);
-    object_property_add_alias(OBJECT(pcms), "pcspk-audiodev",
-                              OBJECT(pcms->pcspk), "audiodev");
     if (pcmc->pci_enabled) {
         cxl_machine_init(obj, &pcms->cxl_devices_state);
     }

@@ -18,9 +18,6 @@ option('tls_priority', type : 'string', value : 'NORMAL',
        description: 'Default TLS protocol/cipher priority string')
 option('default_devices', type : 'boolean', value : true,
        description: 'Include a default selection of devices in emulators')
-option('audio_drv_list', type: 'array', value: ['default'],
-       choices: ['alsa', 'coreaudio', 'default', 'dsound', 'jack', 'oss', 'pa', 'pipewire', 'sdl', 'sndio'],
-       description: 'Set audio driver list')
 option('block_drv_rw_whitelist', type : 'string', value : '',
        description: 'set block driver read-write whitelist (by default affects only QEMU, not tools like qemu-img)')
 option('block_drv_ro_whitelist', type : 'string', value : '',
@@ -281,23 +278,6 @@ option('fuse_lseek', type : 'feature', value : 'auto',
 option('trace_backends', type: 'array', value: ['log'],
        choices: ['dtrace', 'ftrace', 'log', 'nop', 'simple', 'syslog', 'ust'],
        description: 'Set available tracing backends')
-
-option('alsa', type: 'feature', value: 'auto',
-       description: 'ALSA sound support')
-option('coreaudio', type: 'feature', value: 'auto',
-       description: 'CoreAudio sound support')
-option('dsound', type: 'feature', value: 'auto',
-       description: 'DirectSound sound support')
-option('jack', type: 'feature', value: 'auto',
-       description: 'JACK sound support')
-option('oss', type: 'feature', value: 'auto',
-       description: 'OSS sound support')
-option('pa', type: 'feature', value: 'auto',
-       description: 'PulseAudio sound support')
-option('pipewire', type: 'feature', value: 'auto',
-       description: 'PipeWire sound support')
-option('sndio', type: 'feature', value: 'auto',
-       description: 'sndio sound support')
 
 option('vhost_kernel', type: 'feature', value: 'auto',
        description: 'vhost kernel backend support')

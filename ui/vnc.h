@@ -31,7 +31,6 @@
 #include "qemu/thread.h"
 #include "ui/clipboard.h"
 #include "ui/console.h"
-#include "audio/audio.h"
 #include "qemu/bitmap.h"
 #include "crypto/tlssession.h"
 #include "qemu/buffer.h"
@@ -184,7 +183,6 @@ struct VncDisplay
     VncDisplaySASL sasl;
 #endif
 
-    AudioState *audio_state;
 
     VMChangeStateEntry *vmstate_handler_entry;
 };
@@ -311,11 +309,10 @@ struct VncState
      * when a force update is fully sent to the client, allowing
      * us to process further forced updates. */
     size_t force_update_offset;
-    /* We allow multiple incremental updates or audio capture
-     * samples to be queued in output buffer, provided the
-     * buffer size doesn't exceed this threshold. The value
-     * is calculating dynamically based on framebuffer size
-     * and audio sample settings in vnc_update_throttle_offset() */
+    /* We allow multiple incremental updates to be queued in the output
+     * buffer, provided the buffer size doesn't exceed this threshold. The
+     * value is calculated dynamically based on framebuffer size in
+     * vnc_update_throttle_offset(). */
     size_t throttle_output_offset;
     Buffer output;
     Buffer input;
@@ -324,9 +321,6 @@ struct VncState
     PixelFormat client_pf;
     pixman_format_code_t client_format;
     int client_endian; /* G_LITTLE_ENDIAN or G_BIG_ENDIAN */
-
-    CaptureVoiceOut *audio_cap;
-    struct audsettings as;
 
     VncReadEvent *read_handler;
     size_t read_handler_expect;
@@ -423,7 +417,6 @@ enum {
 #define VNC_ENCODING_DESKTOPRESIZE        0xFFFFFF21 /* -223 */
 #define VNC_ENCODING_POINTER_TYPE_CHANGE  0XFFFFFEFF /* -257 */
 #define VNC_ENCODING_EXT_KEY_EVENT        0XFFFFFEFE /* -258 */
-#define VNC_ENCODING_AUDIO                0XFFFFFEFD /* -259 */
 #define VNC_ENCODING_TIGHT_PNG            0xFFFFFEFC /* -260 */
 #define VNC_ENCODING_LED_STATE            0XFFFFFEFB /* -261 */
 #define VNC_ENCODING_DESKTOP_RESIZE_EXT   0XFFFFFECC /* -308 */
@@ -473,7 +466,6 @@ enum VncFeatures {
     VNC_FEATURE_LED_STATE,
     VNC_FEATURE_XVP,
     VNC_FEATURE_CLIPBOARD_EXT,
-    VNC_FEATURE_AUDIO,
 };
 
 
@@ -510,22 +502,6 @@ enum VncFeatures {
 
 /* QEMU client -> server message IDs */
 #define VNC_MSG_CLIENT_QEMU_EXT_KEY_EVENT         0
-#define VNC_MSG_CLIENT_QEMU_AUDIO                 1
-
-/* QEMU server -> client message IDs */
-#define VNC_MSG_SERVER_QEMU_AUDIO                 1
-
-
-
-/* QEMU client -> server audio message IDs */
-#define VNC_MSG_CLIENT_QEMU_AUDIO_ENABLE          0
-#define VNC_MSG_CLIENT_QEMU_AUDIO_DISABLE         1
-#define VNC_MSG_CLIENT_QEMU_AUDIO_SET_FORMAT      2
-
-/* QEMU server -> client audio message IDs */
-#define VNC_MSG_SERVER_QEMU_AUDIO_END             0
-#define VNC_MSG_SERVER_QEMU_AUDIO_BEGIN           1
-#define VNC_MSG_SERVER_QEMU_AUDIO_DATA            2
 
 /* XVP server -> client status code */
 #define VNC_XVP_CODE_FAIL 0

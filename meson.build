@@ -1304,33 +1304,6 @@ if vde.found() and not cc.links('''
   endif
 endif
 
-pulse = not_found
-if not get_option('pa').auto() or (host_os == 'linux' and have_system)
-  pulse = dependency('libpulse', required: get_option('pa'),
-                     method: 'pkg-config')
-endif
-alsa = not_found
-if not get_option('alsa').auto() or (host_os == 'linux' and have_system)
-  alsa = dependency('alsa', required: get_option('alsa'),
-                    method: 'pkg-config')
-endif
-jack = not_found
-if not get_option('jack').auto() or have_system
-  jack = dependency('jack', required: get_option('jack'),
-                    method: 'pkg-config')
-endif
-pipewire = not_found
-if not get_option('pipewire').auto() or (host_os == 'linux' and have_system)
-  pipewire = dependency('libpipewire-0.3', version: '>=0.3.60',
-                    required: get_option('pipewire'),
-                    method: 'pkg-config')
-endif
-sndio = not_found
-if not get_option('sndio').auto() or have_system
-  sndio = dependency('sndio', required: get_option('sndio'),
-                    method: 'pkg-config')
-endif
-
 spice_protocol = not_found
 if not get_option('spice_protocol').auto() or have_system
   spice_protocol = dependency('spice-protocol', version: '>=0.14.0',
@@ -1743,41 +1716,6 @@ if liblzfse.found() and not cc.links('''
   else
     warning('could not link liblzfse, disabling')
   endif
-endif
-
-oss = not_found
-if get_option('oss').allowed() and have_system
-  if not cc.has_header('sys/soundcard.h')
-    # not found
-  elif host_os == 'netbsd'
-    oss = cc.find_library('ossaudio', required: get_option('oss'))
-  else
-    oss = declare_dependency()
-  endif
-
-  if not oss.found()
-    if get_option('oss').enabled()
-      error('OSS not found')
-    endif
-  endif
-endif
-dsound = not_found
-if not get_option('dsound').auto() or (host_os == 'windows' and have_system)
-  if cc.has_header('dsound.h')
-    dsound = declare_dependency(link_args: ['-lole32', '-ldxguid'])
-  endif
-
-  if not dsound.found()
-    if get_option('dsound').enabled()
-      error('DirectSound not found')
-    endif
-  endif
-endif
-
-coreaudio = not_found
-if not get_option('coreaudio').auto() or (host_os == 'darwin' and have_system)
-  coreaudio = dependency('appleframeworks', modules: 'CoreAudio',
-                         required: get_option('coreaudio'))
 endif
 
 opengl = not_found
@@ -2332,46 +2270,6 @@ endif
 config_host_data = configuration_data()
 
 config_host_data.set('CONFIG_HAVE_RUST', have_rust)
-audio_drivers_selected = []
-if have_system
-  audio_drivers_available = {
-    'alsa': alsa.found(),
-    'coreaudio': coreaudio.found(),
-    'dsound': dsound.found(),
-    'jack': jack.found(),
-    'oss': oss.found(),
-    'pa': pulse.found(),
-    'pipewire': pipewire.found(),
-    'sdl': sdl.found(),
-    'sndio': sndio.found(),
-  }
-  foreach k, v: audio_drivers_available
-    config_host_data.set('CONFIG_AUDIO_' + k.to_upper(), v)
-  endforeach
-
-  # Default to native drivers first, OSS second, SDL third
-  audio_drivers_priority = \
-    [ 'pa', 'coreaudio', 'dsound', 'sndio', 'oss' ] + \
-    (host_os == 'linux' ? [] : [ 'sdl' ])
-  audio_drivers_default = []
-  foreach k: audio_drivers_priority
-    if audio_drivers_available[k]
-      audio_drivers_default += k
-    endif
-  endforeach
-
-  foreach k: get_option('audio_drv_list')
-    if k == 'default'
-      audio_drivers_selected += audio_drivers_default
-    elif not audio_drivers_available[k]
-      error('Audio driver "@0@" not available.'.format(k))
-    else
-      audio_drivers_selected += k
-    endif
-  endforeach
-endif
-config_host_data.set('CONFIG_AUDIO_DRIVERS',
-                     '"' + '", "'.join(audio_drivers_selected) + '", ')
 
 have_host_block_device = (host_os != 'darwin' or
     cc.has_header('IOKit/storage/IOMedia.h'))
@@ -3646,7 +3544,6 @@ if have_system
   trace_events_subdirs += [
     'accel/hvf',
     'accel/kvm',
-    'audio',
     'backends',
     'backends/tpm',
     'ebpf',
@@ -3655,7 +3552,6 @@ if have_system
     'hw/adc',
     'hw/alpha',
     'hw/arm',
-    'hw/audio',
     'hw/block',
     'hw/char',
     'hw/display',
@@ -3828,7 +3724,6 @@ if have_system or have_user
   subdir('target')
 endif
 
-subdir('audio')
 subdir('io')
 subdir('chardev')
 subdir('fsdev')
@@ -4705,9 +4600,6 @@ if enable_modules
   summary_info += {'alternative module path': get_option('module_upgrades')}
 endif
 summary_info += {'fuzzing support':   get_option('fuzzing')}
-if have_system
-  summary_info += {'Audio drivers':     ' '.join(audio_drivers_selected)}
-endif
 summary_info += {'Trace backends':    ','.join(get_option('trace_backends'))}
 if 'simple' in get_option('trace_backends')
   summary_info += {'Trace output file': get_option('trace_file') + '-<pid>'}
@@ -4921,24 +4813,6 @@ summary_info = {}
 summary_info += {'VirGL support':     virgl}
 summary_info += {'Rutabaga support':  rutabaga}
 summary(summary_info, bool_yn: true, section: 'Graphics backends')
-
-# Audio backends
-summary_info = {}
-if host_os not in ['darwin', 'haiku', 'windows']
-  summary_info += {'OSS support':     oss}
-  summary_info += {'sndio support':   sndio}
-elif host_os == 'darwin'
-  summary_info += {'CoreAudio support': coreaudio}
-elif host_os == 'windows'
-  summary_info += {'DirectSound support': dsound}
-endif
-if host_os == 'linux'
-  summary_info += {'ALSA support':    alsa}
-  summary_info += {'PulseAudio support': pulse}
-endif
-summary_info += {'PipeWire support':  pipewire}
-summary_info += {'JACK support':      jack}
-summary(summary_info, bool_yn: true, section: 'Audio backends')
 
 # Network backends
 summary_info = {}

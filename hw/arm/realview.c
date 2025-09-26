@@ -29,7 +29,6 @@
 #include "hw/irq.h"
 #include "hw/i2c/arm_sbcon_i2c.h"
 #include "hw/sd/sd.h"
-#include "audio/audio.h"
 #include "target/arm/cpu-qom.h"
 
 #define SMP_BOOT_ADDR 0xe0000000
@@ -83,7 +82,7 @@ static void realview_init(MachineState *machine,
     MemoryRegion *ram_hi = g_new(MemoryRegion, 1);
     MemoryRegion *ram_alias = g_new(MemoryRegion, 1);
     MemoryRegion *ram_hack = g_new(MemoryRegion, 1);
-    DeviceState *dev, *sysctl, *gpio2, *pl041;
+    DeviceState *dev, *sysctl, *gpio2;
     SysBusDevice *busdev;
     qemu_irq pic[64];
     PCIBus *pci_bus = NULL;
@@ -211,15 +210,6 @@ static void realview_init(MachineState *machine,
     for (n = 0; n < GIC_EXT_IRQS; n++) {
         pic[n] = qdev_get_gpio_in(dev, n);
     }
-
-    pl041 = qdev_new("pl041");
-    qdev_prop_set_uint32(pl041, "nc_fifo_depth", 512);
-    if (machine->audiodev) {
-        qdev_prop_set_string(pl041, "audiodev", machine->audiodev);
-    }
-    sysbus_realize_and_unref(SYS_BUS_DEVICE(pl041), &error_fatal);
-    sysbus_mmio_map(SYS_BUS_DEVICE(pl041), 0, 0x10004000);
-    sysbus_connect_irq(SYS_BUS_DEVICE(pl041), 0, pic[19]);
 
     sysbus_create_simple("pl050_keyboard", 0x10006000, pic[20]);
     sysbus_create_simple("pl050_mouse", 0x10007000, pic[21]);
@@ -424,7 +414,6 @@ static void realview_eb_class_init(ObjectClass *oc, const void *data)
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("arm926");
     mc->auto_create_sdcard = true;
 
-    machine_add_audiodev_property(mc);
 }
 
 static const TypeInfo realview_eb_type = {
@@ -445,7 +434,6 @@ static void realview_eb_mpcore_class_init(ObjectClass *oc, const void *data)
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("arm11mpcore");
     mc->auto_create_sdcard = true;
 
-    machine_add_audiodev_property(mc);
 }
 
 static const TypeInfo realview_eb_mpcore_type = {
@@ -464,7 +452,6 @@ static void realview_pb_a8_class_init(ObjectClass *oc, const void *data)
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-a8");
     mc->auto_create_sdcard = true;
 
-    machine_add_audiodev_property(mc);
 }
 
 static const TypeInfo realview_pb_a8_type = {
@@ -484,7 +471,6 @@ static void realview_pbx_a9_class_init(ObjectClass *oc, const void *data)
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-a9");
     mc->auto_create_sdcard = true;
 
-    machine_add_audiodev_property(mc);
 }
 
 static const TypeInfo realview_pbx_a9_type = {

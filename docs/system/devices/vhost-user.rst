@@ -49,9 +49,6 @@ platform details for what sort of virtio bus to use.
   * - vhost-user-scmi
     - System Control and Management Interface
     - See https://github.com/rust-vmm/vhost-device
-  * - vhost-user-snd
-    - Audio device
-    - See https://github.com/rust-vmm/vhost-device/staging
   * - vhost-user-scsi
     - SCSI based storage
     - See contrib/vhost-user-scsi
@@ -127,4 +124,3 @@ memory objects.
       -object memory-backend-memfd,id=mem,size=4G,share=on \\
       -numa node,memdev=mem \\
         ...
-

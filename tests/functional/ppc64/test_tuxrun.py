@@ -44,7 +44,6 @@ class TuxRunPPC64Test(TuxRunBaselineTest):
                          '"drive-scsi0-0-0-0","id":"scsi0-0-0-0"}')
         self.vm.add_args('-device', '{"driver":"virtio-balloon-pci",'
                          '"id":"balloon0","bus":"pci.0","addr":"0x6"}')
-        self.vm.add_args('-audiodev', '{"id":"audio1","driver":"none"}')
         self.vm.add_args('-device', '{"driver":"usb-tablet","id":"input0"'
                          ',"bus":"usb.0","port":"1"}')
         self.vm.add_args('-device', '{"driver":"usb-kbd","id":"input1"'

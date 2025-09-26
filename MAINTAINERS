@@ -1335,7 +1335,6 @@ F: hw/display/macfb.c
 F: hw/block/swim.c
 F: hw/misc/djmemc.c
 F: hw/misc/iosb.c
-F: hw/audio/asc.c
 F: hw/m68k/bootinfo.h
 F: include/standard-headers/asm-m68k/bootinfo.h
 F: include/standard-headers/asm-m68k/bootinfo-mac.h
@@ -1347,7 +1346,6 @@ F: include/hw/m68k/q800.h
 F: include/hw/m68k/q800-glue.h
 F: include/hw/misc/djmemc.h
 F: include/hw/misc/iosb.h
-F: include/hw/audio/asc.h
 F: tests/functional/m68k/test_q800.py
 
 virt
@@ -2007,8 +2005,6 @@ Devices
 Overall Audio frontends
 M: Gerd Hoffmann <kraxel@redhat.com>
 S: Odd Fixes
-F: hw/audio/
-F: include/hw/audio/
 F: tests/qtest/ac97-test.c
 F: tests/qtest/es1370-test.c
 F: tests/qtest/intel-hda-test.c
@@ -2472,13 +2468,6 @@ F: hw/virtio/vhost-user-gpio*
 F: include/hw/virtio/vhost-user-gpio.h
 F: tests/qtest/libqos/virtio-gpio.*
 
-vhost-user-snd
-M: Alex Bennée <alex.bennee@linaro.org>
-R: Manos Pitsidianakis <manos.pitsidianakis@linaro.org>
-S: Maintained
-F: hw/virtio/vhost-user-snd*
-F: include/hw/virtio/vhost-user-snd.h
-
 vhost-user-scmi
 R: mzamazal@redhat.com
 S: Supported
@@ -2517,9 +2506,6 @@ virtio-snd
 M: Gerd Hoffmann <kraxel@redhat.com>
 R: Manos Pitsidianakis <manos.pitsidianakis@linaro.org>
 S: Supported
-F: hw/audio/virtio-snd.c
-F: hw/audio/virtio-snd-pci.c
-F: include/hw/audio/virtio-snd.h
 F: docs/system/devices/virtio-snd.rst
 
 nvme
@@ -2931,23 +2917,12 @@ Overall Audio backends
 M: Gerd Hoffmann <kraxel@redhat.com>
 M: Marc-André Lureau <marcandre.lureau@redhat.com>
 S: Odd Fixes
-F: audio/
-X: audio/alsaaudio.c
-X: audio/coreaudio.m
-X: audio/dsound*
-X: audio/jackaudio.c
-X: audio/ossaudio.c
-X: audio/paaudio.c
-X: audio/sdlaudio.c
-X: audio/sndioaudio.c
-X: audio/spiceaudio.c
 F: qapi/audio.json
 
 ALSA Audio backend
 M: Gerd Hoffmann <kraxel@redhat.com>
 R: Christian Schoenebeck <qemu_oss@crudebyte.com>
 S: Odd Fixes
-F: audio/alsaaudio.c
 
 Core Audio framework backend
 M: Gerd Hoffmann <kraxel@redhat.com>
@@ -2955,40 +2930,33 @@ M: Philippe Mathieu-Daudé <philmd@linaro.org>
 R: Christian Schoenebeck <qemu_oss@crudebyte.com>
 R: Akihiko Odaki <odaki@rsg.ci.i.u-tokyo.ac.jp>
 S: Odd Fixes
-F: audio/coreaudio.m
 
 DSound Audio backend
 M: Gerd Hoffmann <kraxel@redhat.com>
 S: Odd Fixes
-F: audio/dsound*
 
 JACK Audio Connection Kit backend
 M: Gerd Hoffmann <kraxel@redhat.com>
 R: Christian Schoenebeck <qemu_oss@crudebyte.com>
 S: Odd Fixes
-F: audio/jackaudio.c
 
 Open Sound System (OSS) Audio backend
 M: Gerd Hoffmann <kraxel@redhat.com>
 S: Odd Fixes
-F: audio/ossaudio.c
 
 PulseAudio backend
 M: Gerd Hoffmann <kraxel@redhat.com>
 S: Odd Fixes
-F: audio/paaudio.c
 
 SDL Audio backend
 M: Gerd Hoffmann <kraxel@redhat.com>
 R: Thomas Huth <huth@tuxfamily.org>
 S: Odd Fixes
-F: audio/sdlaudio.c
 
 Sndio Audio backend
 M: Gerd Hoffmann <kraxel@redhat.com>
 R: Alexandre Ratchov <alex@caoua.org>
 S: Odd Fixes
-F: audio/sndioaudio.c
 
 Block layer core
 M: Kevin Wolf <kwolf@redhat.com>
@@ -3236,7 +3204,6 @@ S: Orphan
 F: include/ui/qemu-spice.h
 F: include/ui/spice-display.h
 F: ui/spice-*.c
-F: audio/spiceaudio.c
 F: hw/display/qxl*
 F: qapi/ui.json
 F: docs/spice-port-fqdn.txt
@@ -3650,7 +3617,6 @@ M: Marc-André Lureau <marcandre.lureau@redhat.com>
 S: Maintained
 F: backends/dbus-vmstate.c
 F: ui/dbus*
-F: audio/dbus*
 F: util/dbus.c
 F: include/ui/dbus*
 F: include/qemu/dbus.h

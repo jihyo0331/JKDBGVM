@@ -25,7 +25,6 @@
 #include "hw/char/pl011.h"
 #include "hw/sd/sd.h"
 #include "qom/object.h"
-#include "audio/audio.h"
 #include "target/arm/cpu-qom.h"
 #include "qemu/log.h"
 
@@ -193,7 +192,6 @@ static void versatile_init(MachineState *machine, int board_id)
     qemu_irq sic[32];
     DeviceState *dev, *sysctl;
     SysBusDevice *busdev;
-    DeviceState *pl041;
     PCIBus *pci_bus;
     I2CBus *i2c;
     int n;
@@ -343,22 +341,11 @@ static void versatile_init(MachineState *machine, int board_id)
     i2c = (I2CBus *)qdev_get_child_bus(dev, "i2c");
     i2c_slave_create_simple(i2c, "ds1338", 0x68);
 
-    /* Add PL041 AACI Interface to the LM4549 codec */
-    pl041 = qdev_new("pl041");
-    qdev_prop_set_uint32(pl041, "nc_fifo_depth", 512);
-    if (machine->audiodev) {
-        qdev_prop_set_string(pl041, "audiodev", machine->audiodev);
-    }
-    sysbus_realize_and_unref(SYS_BUS_DEVICE(pl041), &error_fatal);
-    sysbus_mmio_map(SYS_BUS_DEVICE(pl041), 0, 0x10004000);
-    sysbus_connect_irq(SYS_BUS_DEVICE(pl041), 0, sic[24]);
-
     /* Memory map for Versatile/PB:  */
     /* 0x10000000 System registers.  */
     /* 0x10001000 PCI controller config registers.  */
     /* 0x10002000 Serial bus interface.  */
     /*  0x10003000 Secondary interrupt controller.  */
-    /* 0x10004000 AACI (audio).  */
     /*  0x10005000 MMCI0.  */
     /*  0x10006000 KMI0 (keyboard).  */
     /*  0x10007000 KMI1 (mouse).  */
@@ -424,7 +411,6 @@ static void versatilepb_class_init(ObjectClass *oc, const void *data)
     mc->default_ram_id = "versatile.ram";
     mc->auto_create_sdcard = true;
 
-    machine_add_audiodev_property(mc);
 }
 
 static const TypeInfo versatilepb_type = {
@@ -445,7 +431,6 @@ static void versatileab_class_init(ObjectClass *oc, const void *data)
     mc->default_ram_id = "versatile.ram";
     mc->auto_create_sdcard = true;
 
-    machine_add_audiodev_property(mc);
 }
 
 static const TypeInfo versatileab_type = {

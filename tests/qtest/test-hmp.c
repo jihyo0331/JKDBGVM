@@ -64,8 +64,6 @@ static const char *hmp_cmds[] = {
     "qom-get /machine initrd",
     "screendump /dev/null",
     "sendkey x",
-    "wavcapture /dev/null",
-    "stopcapture 0",
     "sum 0 512",
     "x /8i 0x100",
     "xp /16x 0",
