@@ -243,3 +243,250 @@
 [2025-09-27 04:40:00] [DEBUG] Timing start: snapctl loadvm:test31
 [2025-09-27 04:40:12] [DEBUG] snapctl loadvm:test31: 12.413 s (12413 ms)
 [2025-09-27 04:40:12] [INFO] loadvm 'test31' 성공 (12.413 s)
+[2025-09-27 04:48:08] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:48:08] [DEBUG] Timing start: snapctl savevm:test
+[2025-09-27 04:48:08] [DEBUG] Starting savevm for snapshot: test
+[2025-09-27 04:48:25] [WARN] QMP capabilities 응답을 읽지 못했습니다 (시도 1/3)
+[2025-09-27 04:48:30] [INFO] Snapshot 'test' verified in snapshot list
+[2025-09-27 04:48:30] [DEBUG] snapctl savevm:test: 22.130 s (22130 ms)
+[2025-09-27 04:48:30] [INFO] savevm 'test' 성공 (22.130 s)
+[2025-09-27 04:48:34] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:49:01] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:49:01] [DEBUG] Timing start: snapctl loadvm:test
+[2025-09-27 04:49:16] [ERROR] QMP capabilities 응답을 읽지 못했습니다 (시도 1/3)
+[2025-09-27 04:49:17] [ERROR] QMP 배너를 읽지 못했습니다 (시도 2/3)
+[2025-09-27 04:49:18] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:19] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:19] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:19] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:19] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:20] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:20] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:20] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:21] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:21] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:21] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:21] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:22] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:22] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:22] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:23] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:23] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:24] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:24] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:24] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:24] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:25] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:25] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:25] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:25] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:26] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:26] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:26] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:27] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:27] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:27] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:27] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:28] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:28] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:29] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:29] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:29] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:30] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:30] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:30] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:30] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:31] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:31] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:31] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:32] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:32] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:32] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:32] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:33] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:33] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:33] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:34] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:34] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:35] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:35] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:35] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:35] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:36] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:36] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:36] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:36] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:37] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:37] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:37] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:38] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:38] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:38] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:39] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:39] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:40] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:40] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:40] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:40] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:41] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:41] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:41] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:41] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:42] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:42] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:42] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:43] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:43] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:43] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:43] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:44] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:44] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:44] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:45] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:45] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:46] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:46] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:46] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:46] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:47] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:47] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:47] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:47] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:48] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:48] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:48] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:49] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:49] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:49] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:50] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:50] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:51] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:51] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:51] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:51] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:52] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:52] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:52] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:52] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:53] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:53] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:53] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:54] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:54] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:54] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:54] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:55] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:55] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:55] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:56] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:56] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:57] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:57] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:57] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:57] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:58] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:58] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:58] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:59] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:59] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:49:59] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:49:59] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:00] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:00] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:00] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:01] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:01] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:02] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:02] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:02] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:02] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:03] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:03] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:03] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:03] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:04] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:04] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:04] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:05] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:05] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:05] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:05] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:06] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:06] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:06] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:07] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:07] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:08] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:08] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:08] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:08] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:09] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:09] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:09] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:09] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:10] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:10] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:10] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:11] [ERROR] connect(/home/didqls/vm/win11/qmp.sock) 실패: Connection refused
+[2025-09-27 04:50:11] [ERROR] QMP handshake 실패: 소켓 /home/didqls/vm/win11/qmp.sock
+[2025-09-27 04:50:11] [WARN] loadvm 후 VM이 실행중인지 확인할 수 없습니다
+[2025-09-27 04:50:11] [DEBUG] snapctl loadvm:test: 70.552 s (70552 ms)
+[2025-09-27 04:50:11] [ERROR] loadvm 'test' 실패 (70.552 s)
+[2025-09-27 04:52:11] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:53:09] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:53:09] [DEBUG] Timing start: snapctl loadvm:test
+[2025-09-27 04:53:10] [DEBUG] snapctl loadvm:test: 0.767 s (767 ms)
+[2025-09-27 04:53:10] [INFO] loadvm 'test' 성공 (0.767 s)
+[2025-09-27 04:53:49] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:02] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:08] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:18] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:24] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:33] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:38] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:48] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:59] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:54:59] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:56:35] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:56:37] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:56:39] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:56:40] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:57:35] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:57:35] [DEBUG] Timing start: snapctl savevm:test100
+[2025-09-27 04:57:35] [DEBUG] Starting savevm for snapshot: test100
+[2025-09-27 04:57:43] [INFO] Snapshot 'test100' verified in snapshot list
+[2025-09-27 04:57:43] [DEBUG] snapctl savevm:test100: 8.837 s (8837 ms)
+[2025-09-27 04:57:43] [INFO] savevm 'test100' 성공 (8.837 s)
+[2025-09-27 04:57:58] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:57:58] [DEBUG] Timing start: snapctl loadvm:test100
+[2025-09-27 04:58:15] [DEBUG] snapctl loadvm:test100: 16.295 s (16295 ms)
+[2025-09-27 04:58:15] [INFO] loadvm 'test100' 성공 (16.295 s)
+[2025-09-27 04:58:43] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:58:56] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:58:56] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:58:57] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:58:58] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:58:59] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:59:20] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:59:20] [DEBUG] Timing start: snapctl savevm:test101
+[2025-09-27 04:59:20] [DEBUG] Starting savevm for snapshot: test101
+[2025-09-27 04:59:37] [WARN] QMP capabilities 응답을 읽지 못했습니다 (시도 1/3)
+[2025-09-27 04:59:42] [INFO] Snapshot 'test101' verified in snapshot list
+[2025-09-27 04:59:42] [DEBUG] snapctl savevm:test101: 21.375 s (21375 ms)
+[2025-09-27 04:59:42] [INFO] savevm 'test101' 성공 (21.375 s)
+[2025-09-27 04:59:56] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 04:59:56] [DEBUG] Timing start: snapctl loadvm:test101
+[2025-09-27 05:00:12] [DEBUG] snapctl loadvm:test101: 16.159 s (16159 ms)
+[2025-09-27 05:00:12] [INFO] loadvm 'test101' 성공 (16.159 s)
+[2025-09-27 05:00:33] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 05:00:33] [DEBUG] Timing start: snapctl savevm:test102
+[2025-09-27 05:00:33] [DEBUG] Starting savevm for snapshot: test102
+[2025-09-27 05:00:50] [WARN] QMP capabilities 응답을 읽지 못했습니다 (시도 1/3)
+[2025-09-27 05:00:51] [INFO] Snapshot 'test102' verified in snapshot list
+[2025-09-27 05:00:51] [DEBUG] snapctl savevm:test102: 17.277 s (17277 ms)
+[2025-09-27 05:00:51] [INFO] savevm 'test102' 성공 (17.277 s)
+[2025-09-27 05:01:03] [INFO] timing log file: snapctl-timing.log
+[2025-09-27 05:01:03] [DEBUG] Timing start: snapctl loadvm:test102
+[2025-09-27 05:01:19] [DEBUG] snapctl loadvm:test102: 16.240 s (16240 ms)
+[2025-09-27 05:01:19] [INFO] loadvm 'test102' 성공 (16.240 s)
+[2025-09-27 05:02:11] [INFO] timing log file: snapctl-timing.log
