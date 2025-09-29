@@ -48,7 +48,6 @@ native:
 - bash
 - bash-completion-devel
 - bc
-- bindgen-cli
 - bison
 - bzip2
 - ca-certificates

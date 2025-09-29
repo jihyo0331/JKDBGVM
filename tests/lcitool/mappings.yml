@@ -1,14 +1,10 @@
 mappings:
-  # Too old on Ubuntu 22.04; we install it from cargo instead
-  bindgen:
-    Ubuntu2204:
-
   flake8:
     OpenSUSELeap15:
 
   meson:
     OpenSUSELeap15:
-    # Use Meson from PyPI wherever Rust is enabled
+    # Use Meson from PyPI for consistent toolchain versions
     Debian:
     Fedora:
     Ubuntu:

@@ -248,14 +248,6 @@ GSource *iohandler_get_g_source(void);
 AioContext *iohandler_get_aio_context(void);
 
 /**
- * rust_bql_mock_lock:
- *
- * Called from Rust doctests to make bql_lock() return true.
- * Do not touch.
- */
-void rust_bql_mock_lock(void);
-
-/**
  * bql_locked: Return lock status of the Big QEMU Lock (BQL)
  *
  * The Big QEMU Lock (BQL) is the coarsest lock in QEMU, and as such it
@@ -273,11 +265,9 @@ bool bql_locked(void);
 /**
  * bql_block: Allow/deny releasing the BQL
  *
- * The Big QEMU Lock (BQL) is used to provide interior mutability to
- * Rust code, but this only works if other threads cannot run while
- * the Rust code has an active borrow.  This is because C code in
- * other threads could come in and mutate data under the Rust code's
- * feet.
+ * Some internal helpers temporarily block releasing the BQL while they
+ * manipulate shared state.  This guard lets those helpers enforce that
+ * the lock stays held for the duration of the critical section.
  *
  * @increase: Whether to increase or decrease the blocking counter.
  *            Releasing the BQL while the counter is nonzero triggers

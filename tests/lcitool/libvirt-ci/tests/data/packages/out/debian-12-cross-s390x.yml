@@ -120,7 +120,6 @@ native:
 - bash
 - bash-completion
 - bc
-- bindgen
 - bison
 - black
 - bsdextrautils

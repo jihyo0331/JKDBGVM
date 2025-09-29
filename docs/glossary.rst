@@ -221,13 +221,6 @@ Record/replay
 :ref:`Record/replay <replay>` is a feature of QEMU allowing to have a
 deterministic and reproducible execution of a virtual machine.
 
-Rust
-----
-
-`A new programming language <https://www.rust-lang.org/>`_, memory safe by
-default. There is a work in progress to integrate it in QEMU codebase for
-various subsystems.
-
 System mode
 -----------
 

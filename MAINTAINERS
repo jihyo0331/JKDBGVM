@@ -1228,11 +1228,6 @@ F: tests/qtest/microbit-test.c
 F: tests/functional/arm/test_microbit.py
 F: docs/system/arm/nrf.rst
 
-ARM PL011 Rust device
-M: Manos Pitsidianakis <manos.pitsidianakis@linaro.org>
-S: Maintained
-F: rust/hw/char/pl011/
-
 AVR Machines
 -------------
 
@@ -3479,27 +3474,6 @@ F: hw/core/register.c
 F: include/hw/register.h
 F: include/hw/registerfields.h
 
-Rust
-M: Manos Pitsidianakis <manos.pitsidianakis@linaro.org>
-S: Maintained
-F: rust/bql/
-F: rust/chardev/
-F: rust/common/
-F: rust/hw/core/
-F: rust/migration/
-F: rust/qemu-macros/
-F: rust/qom/
-F: rust/rustfmt.toml
-F: rust/system/
-F: rust/tests/
-F: rust/util/
-F: scripts/get-wraps-from-cargo-registry.py
-
-Rust-related patches CC here
-L: qemu-rust@nongnu.org
-F: tests/docker/test-rust
-F: rust/
-
 SLIRP
 M: Samuel Thibault <samuel.thibault@ens-lyon.org>
 S: Maintained
@@ -4425,16 +4399,6 @@ F: docs/devel/docs.rst
 F: docs/devel/qapi-domain.rst
 F: scripts/kernel-doc
 F: scripts/lib/kdoc/
-
-Rust build system integration
-M: Manos Pitsidianakis <manos.pitsidianakis@linaro.org>
-L: qemu-rust@nongnu.org
-S: Maintained
-F: scripts/rust/
-F: rust/.gitignore
-F: rust/Kconfig
-F: rust/meson.build
-F: rust/wrapper.h
 
 Miscellaneous
 -------------

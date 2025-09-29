@@ -61,8 +61,6 @@
     "py311-tomli",
     "python3",
     "rpm2cpio",
-    "rust",
-    "rust-bindgen-cli",
     "sdl2",
     "sdl2_image",
     "snappy",
@@ -78,5 +76,6 @@
     "zstd"
   ],
   "pypi_pkgs": [],
-  "python": "/usr/local/bin/python3"
+  "python": "/usr/local/bin/python3",
+  "pkg_pkgs": []
 }

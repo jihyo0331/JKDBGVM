@@ -161,8 +161,6 @@ static const Property vmapple_cfg_properties[] = {
     DEFINE_PROP_UINT32("rnd", VMAppleCfgState, cfg.rnd, 0),
     DEFINE_PROP_MACADDR("mac-en0", VMAppleCfgState, cfg.mac_en0),
     DEFINE_PROP_MACADDR("mac-en1", VMAppleCfgState, cfg.mac_en1),
-    DEFINE_PROP_MACADDR("mac-wifi0", VMAppleCfgState, cfg.mac_wifi0),
-    DEFINE_PROP_MACADDR("mac-bt0", VMAppleCfgState, cfg.mac_bt0),
     DEFINE_PROP_STRING("serial", VMAppleCfgState, serial),
     DEFINE_PROP_STRING("model", VMAppleCfgState, model),
     DEFINE_PROP_STRING("soc_name", VMAppleCfgState, soc_name),

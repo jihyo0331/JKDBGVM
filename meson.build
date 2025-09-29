@@ -20,7 +20,6 @@ meson.add_postconf_script(find_program('scripts/symlink-install-tree.py'))
 
 not_found = dependency('', required: false)
 keyval = import('keyval')
-rust = import('rust')
 ss = import('sourceset')
 fs = import('fs')
 
@@ -88,65 +87,6 @@ if host_os == 'darwin' and \
   objc = meson.get_compiler('objc')
 endif
 
-have_rust = add_languages('rust', native: false,
-    required: get_option('rust').disable_auto_if(not have_system))
-have_rust = have_rust and add_languages('rust', native: true,
-    required: get_option('rust').disable_auto_if(not have_system))
-if have_rust
-  rustc = meson.get_compiler('rust')
-  if rustc.version().version_compare('<1.83.0')
-    if get_option('rust').enabled()
-      error('rustc version ' + rustc.version() + ' is unsupported. Please upgrade to at least 1.83.0')
-    else
-      warning('rustc version ' + rustc.version() + ' is unsupported, disabling Rust compilation.')
-      message('Please upgrade to at least 1.83.0 to use Rust.')
-      have_rust = false
-    endif
-  endif
-endif
-
-if have_rust
-  rustdoc = find_program('rustdoc', required: get_option('rust'))
-  bindgen = find_program('bindgen', required: get_option('rust'))
-  if not bindgen.found() or bindgen.version().version_compare('<0.60.0')
-    if get_option('rust').enabled()
-      error('bindgen version ' + bindgen.version() + ' is unsupported. You can install a new version with "cargo install bindgen-cli"')
-    else
-      if bindgen.found()
-        warning('bindgen version ' + bindgen.version() + ' is unsupported, disabling Rust compilation.')
-      else
-        warning('bindgen not found, disabling Rust compilation.')
-      endif
-      message('To use Rust you can install a new version with "cargo install bindgen-cli"')
-      have_rust = false
-    endif
-  endif
-endif
-
-if have_rust
-  rustc_args = [find_program('scripts/rust/rustc_args.py'),
-    '--rustc-version', rustc.version(),
-    '--workspace', meson.project_source_root() / 'rust']
-  if get_option('strict_rust_lints')
-    rustc_args += ['--strict-lints']
-  endif
-
-  rustfmt = find_program('rustfmt', required: false)
-
-  rustc_lint_args = run_command(rustc_args, '--lints',
-     capture: true, check: true).stdout().strip().splitlines()
-
-  # Apart from procedural macros, our Rust executables will often link
-  # with C code, so include all the libraries that C code needs.  This
-  # is safe; https://github.com/rust-lang/rust/pull/54675 says that
-  # passing -nodefaultlibs to the linker "was more ideological to
-  # start with than anything".
-  add_project_arguments(rustc_lint_args +
-      ['--cfg', 'MESON', '-C', 'default-linker-libraries'],
-      native: false, language: 'rust')
-  add_project_arguments(rustc_lint_args + ['--cfg', 'MESON'],
-      native: true, language: 'rust')
-endif
 
 dtrace = not_found
 stap = not_found
@@ -2269,8 +2209,6 @@ endif
 
 config_host_data = configuration_data()
 
-config_host_data.set('CONFIG_HAVE_RUST', have_rust)
-
 have_host_block_device = (host_os != 'darwin' or
     cc.has_header('IOKit/storage/IOMedia.h'))
 
@@ -3231,8 +3169,7 @@ host_kconfig = \
   (host_os == 'linux' ? ['CONFIG_LINUX=y'] : []) + \
   (multiprocess_allowed ? ['CONFIG_MULTIPROCESS_ALLOWED=y'] : []) + \
   (vfio_user_server_allowed ? ['CONFIG_VFIO_USER_SERVER_ALLOWED=y'] : []) + \
-  (hv_balloon ? ['CONFIG_HV_BALLOON_POSSIBLE=y'] : []) + \
-  (have_rust ? ['CONFIG_HAVE_RUST=y'] : [])
+  (hv_balloon ? ['CONFIG_HV_BALLOON_POSSIBLE=y'] : [])
 
 ignored = [ 'TARGET_XML_FILES', 'TARGET_ABI_DIR', 'TARGET_ARCH' ]
 
@@ -3643,7 +3580,6 @@ qom_ss = ss.source_set()
 system_ss = ss.source_set()
 specific_fuzz_ss = ss.source_set()
 specific_ss = ss.source_set()
-rust_devices_ss = ss.source_set()
 stub_ss = ss.source_set()
 trace_ss = ss.source_set()
 user_ss = ss.source_set()
@@ -4111,47 +4047,8 @@ foreach target_base_arch, config_base_arch : config_base_arch_mak
   endif
 endforeach
 
-if have_rust
-  bindings_incdir = include_directories('.', 'include')
-  # We would like to use --generate-cstr, but it is only available
-  # starting with bindgen 0.66.0.  The oldest supported versions
-  # is 0.60.x (Debian 12 has 0.60.1) which introduces --allowlist-file.
-  bindgen_args_common = [
-    '--disable-header-comment',
-    '--raw-line', '// @generated',
-    '--ctypes-prefix', 'std::os::raw',
-    '--generate-block',
-    '--impl-debug',
-    '--no-doc-comments',
-    '--with-derive-default',
-    '--no-layout-tests',
-    '--no-prepend-enum-name',
-    '--allowlist-file', meson.project_source_root() + '/include/.*',
-    '--allowlist-file', meson.project_source_root() + '/.*',
-    '--allowlist-file', meson.project_build_root() + '/.*'
-    ]
-  if not rustfmt.found()
-    if bindgen.version().version_compare('<0.65.0')
-      bindgen_args_common += ['--no-rustfmt-bindings']
-    else
-      bindgen_args_common += ['--formatter', 'none']
-    endif
-  endif
-  if bindgen.version().version_compare('>=0.66.0')
-    bindgen_args_common += ['--rust-target', '1.59']
-  endif
-  if bindgen.version().version_compare('<0.61.0')
-    # default in 0.61+
-    bindgen_args_common += ['--size_t-is-usize']
-  else
-    bindgen_args_common += ['--merge-extern-blocks']
-  endif
-  subdir('rust')
-endif
-
 
 feature_to_c = find_program('scripts/feature_to_c.py')
-rust_root_crate = find_program('scripts/rust/rust_root_crate.sh')
 
 if host_os == 'darwin'
   entitlement = find_program('scripts/entitlement.sh')
@@ -4270,28 +4167,6 @@ foreach target : target_dirs
   target_specific = specific_ss.apply(config_target, strict: false)
   arch_srcs += target_specific.sources()
   arch_deps += target_specific.dependencies()
-
-  if have_rust and target_type == 'system'
-    target_rust = rust_devices_ss.apply(config_target, strict: false)
-    crates = []
-    foreach dep : target_rust.dependencies()
-      crates += dep.get_variable('crate')
-    endforeach
-    if crates.length() > 0
-      rlib_rs = custom_target('rust_' + target.underscorify() + '.rs',
-                              output: 'rust_' + target.underscorify() + '.rs',
-                              command: [rust_root_crate, crates],
-                              capture: true,
-                              build_by_default: true,
-                              build_always_stale: true)
-      rlib = static_library('rust_' + target.underscorify(),
-                            structured_sources([], {'.': rlib_rs}),
-                            dependencies: target_rust.dependencies(),
-                            override_options: ['rust_std=2021', 'build.rust_std=2021'],
-                            rust_abi: 'c')
-      arch_deps += declare_dependency(link_whole: [rlib])
-    endif
-  endif
 
   # allow using headers from the dependencies but do not include the sources,
   # because this emulator only needs those in "objects".  For external
@@ -4630,15 +4505,6 @@ if 'objc' in all_languages
   summary_info += {'Objective-C compiler': ' '.join(meson.get_compiler('objc').cmd_array())}
 else
   summary_info += {'Objective-C compiler': false}
-endif
-summary_info += {'Rust support':      have_rust}
-if have_rust
-  summary_info += {'Rust target':     config_host['RUST_TARGET_TRIPLE']}
-  summary_info += {'rustc':           ' '.join(rustc.cmd_array())}
-  summary_info += {'rustc version':   rustc.version()}
-  summary_info += {'rustdoc':         rustdoc}
-  summary_info += {'bindgen':         bindgen.full_path()}
-  summary_info += {'bindgen version': bindgen.version()}
 endif
 option_cflags = (get_option('debug') ? ['-g'] : [])
 if get_option('optimization') != 'plain'
