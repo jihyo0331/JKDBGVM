@@ -108,18 +108,12 @@ SRCDIRS		+= config
 # Boot signing.
 #
 SRCDIRS_INSEC	+= net/oncrpc
-SRCDIRS_INSEC	+= net/80211
-SRCDIRS_INSEC	+= drivers/net/rtl818x
-SRCDIRS_INSEC	+= drivers/net/ath
-SRCDIRS_INSEC	+= drivers/net/ath/ath5k
-SRCDIRS_INSEC	+= drivers/net/ath/ath9k
 
 # NON_AUTO_SRCS lists files that are excluded from the normal
 # automatic build system.
 #
 NON_AUTO_SRCS	:=
 NON_AUTO_SRCS	+= core/version.c
-NON_AUTO_SRCS	+= drivers/net/prism2.c
 
 # INCDIRS lists the include path
 #

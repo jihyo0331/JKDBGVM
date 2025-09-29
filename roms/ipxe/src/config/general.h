@@ -87,9 +87,9 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
  * 802.11 cryptosystems and handshaking protocols
  *
  */
-#define	CRYPTO_80211_WEP	/* WEP encryption (deprecated and insecure!) */
-#define	CRYPTO_80211_WPA	/* WPA Personal, authenticating with passphrase */
-#define	CRYPTO_80211_WPA2	/* Add support for stronger WPA cryptography */
+//#define	CRYPTO_80211_WEP	/* WEP encryption (deprecated and insecure!) */
+//#define	CRYPTO_80211_WPA	/* WPA Personal, authenticating with passphrase */
+//#define	CRYPTO_80211_WPA2	/* Add support for stronger WPA cryptography */
 
 /*
  * 802.1x EAP authentication methods
