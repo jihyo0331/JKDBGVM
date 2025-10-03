@@ -22,6 +22,9 @@ typedef enum {
     ICOUNT_ADAPTATIVE,
 } ICountMode;
 
+/* Maximum icount shift (log2 of the instruction-to-ns multiplier). */
+#define ICOUNT_SHIFT_MAX 10
+
 #ifdef CONFIG_TCG
 extern ICountMode use_icount;
 #define icount_enabled() (use_icount)

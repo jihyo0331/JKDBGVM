@@ -46,7 +46,6 @@
  */
 static bool icount_sleep = true;
 /* Arbitrarily pick 1MIPS as the minimum allowable speed.  */
-#define MAX_ICOUNT_SHIFT 10
 
 bool icount_align_option;
 
@@ -195,7 +194,7 @@ static void icount_adjust(void)
     }
     if (delta < 0
         && timers_state.last_delta - ICOUNT_WOBBLE > delta * 2
-        && timers_state.icount_time_shift < MAX_ICOUNT_SHIFT) {
+        && timers_state.icount_time_shift < ICOUNT_SHIFT_MAX) {
         /* The guest is getting too far behind.  Speed time up.  */
         qatomic_set(&timers_state.icount_time_shift,
                     timers_state.icount_time_shift + 1);
@@ -438,7 +437,7 @@ bool icount_configure(QemuOpts *opts, Error **errp)
 
     if (strcmp(option, "auto") != 0) {
         if (qemu_strtol(option, NULL, 0, &time_shift) < 0
-            || time_shift < 0 || time_shift > MAX_ICOUNT_SHIFT) {
+            || time_shift < 0 || time_shift > ICOUNT_SHIFT_MAX) {
             error_setg(errp, "icount: Invalid shift value");
             return false;
         }

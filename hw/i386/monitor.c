@@ -29,6 +29,14 @@
 #include "qapi/qapi-commands-misc-i386.h"
 #include "hw/i386/x86.h"
 #include "hw/rtc/mc146818rtc.h"
+#include "exec/icount.h"
+#include "system/cpus.h"
+#include "system/runstate.h"
+#include "system/tcg.h"
+#include "qemu/atomic.h"
+#include "qemu/seqlock.h"
+#include "qemu/timer.h"
+#include "system/cpu-timers-internal.h"
 
 #include CONFIG_DEVICES
 
@@ -42,5 +50,64 @@ void qmp_rtc_reset_reinjection(Error **errp)
     }
 #else
     assert(!x86ms->rtc);
+#endif
+}
+
+void qmp_x_tcg_set_icount_shift(int64_t value, Error **errp)
+{
+#ifndef CONFIG_TCG
+    error_setg(errp, "TCG accelerator is not available in this build");
+    return;
+#else
+    int16_t old_shift;
+    int16_t new_shift;
+    bool was_running;
+    int64_t current_ns;
+    int64_t raw_icount;
+
+    if (!tcg_enabled()) {
+        error_setg(errp, "TCG accelerator must be active to change icount shift");
+        return;
+    }
+
+    if (icount_enabled() != ICOUNT_PRECISE) {
+        error_setg(errp, "icount shift can only be adjusted in precise mode");
+        return;
+    }
+
+    if (value < 0 || value > ICOUNT_SHIFT_MAX) {
+        error_setg(errp, "value must be in the range [0, %d]", ICOUNT_SHIFT_MAX);
+        return;
+    }
+
+    new_shift = value;
+    old_shift = qatomic_read(&timers_state.icount_time_shift);
+    if (new_shift == old_shift) {
+        return;
+    }
+
+    was_running = runstate_is_running();
+    if (was_running) {
+        pause_all_vcpus();
+    }
+
+    current_ns = icount_get();
+
+    seqlock_write_lock(&timers_state.vm_clock_seqlock,
+                       &timers_state.vm_clock_lock);
+    qatomic_set(&timers_state.icount_time_shift, new_shift);
+    raw_icount = qatomic_read_i64(&timers_state.qemu_icount);
+    qatomic_set_i64(&timers_state.qemu_icount_bias,
+                    current_ns - (raw_icount << new_shift));
+    timers_state.last_delta = 0;
+    timers_state.vm_clock_warp_start = -1;
+    seqlock_write_unlock(&timers_state.vm_clock_seqlock,
+                         &timers_state.vm_clock_lock);
+
+    qemu_clock_notify(QEMU_CLOCK_VIRTUAL);
+
+    if (was_running) {
+        resume_all_vcpus();
+    }
 #endif
 }

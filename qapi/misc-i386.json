@@ -24,6 +24,27 @@
 { 'command': 'rtc-reset-reinjection' }
 
 ##
+# @x-tcg-set-icount-shift:
+#
+# Adjust the runtime instruction counter shift used by the TCG icount
+# clock. This command is only effective when the TCG accelerator is in
+# use and icount runs in precise mode. The provided @value represents
+# the power-of-two scaling factor that converts executed guest
+# instructions into virtual nanoseconds.
+#
+# @value: new icount shift in the inclusive range [0, 10]
+#
+# Since: 9.1
+#
+# .. qmp-example::
+#
+#     -> { "execute": "x-tcg-set-icount-shift", "arguments": { "value": 4 } }
+#     <- { "return": {} }
+##
+{ 'command': 'x-tcg-set-icount-shift',
+  'data': { 'value': 'int' } }
+
+##
 # @SevState:
 #
 # An enumeration of SEV state information used during `query-sev`.
