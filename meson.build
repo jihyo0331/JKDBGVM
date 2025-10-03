@@ -3742,7 +3742,9 @@ subdir('plugins')
 subdir('ebpf')
 
 if 'CONFIG_TCG' in config_all_accel
-  subdir('contrib/plugins')
+  if fs.is_dir(meson.current_source_dir() / 'contrib/plugins')
+    subdir('contrib/plugins')
+  endif
 endif
 
 common_user_inc = []
@@ -3752,8 +3754,12 @@ subdir('bsd-user')
 subdir('linux-user')
 
 # needed for fuzzing binaries
-subdir('tests/qtest/libqos')
-subdir('tests/qtest/fuzz')
+if fs.is_dir(meson.current_source_dir() / 'tests/qtest/libqos')
+  subdir('tests/qtest/libqos')
+endif
+if fs.is_dir(meson.current_source_dir() / 'tests/qtest/fuzz')
+  subdir('tests/qtest/fuzz')
+endif
 
 # accel modules
 target_modules += { 'accel' : { 'qtest': qtest_module_ss }}
@@ -4307,7 +4313,9 @@ if have_tools
     }]
   endforeach
 
-  subdir('contrib/elf2dmp')
+  if fs.is_dir(meson.current_source_dir() / 'contrib/elf2dmp')
+    subdir('contrib/elf2dmp')
+  endif
 
   executable('qemu-edid', files('qemu-edid.c', 'hw/display/edid-generate.c'),
              dependencies: [qemuutil, rt],
@@ -4374,10 +4382,14 @@ endif
 subdir('scripts')
 subdir('tools')
 subdir('pc-bios')
-subdir('docs')
+sphinx_build = false
+build_docs = false
+if fs.is_dir(meson.current_source_dir() / 'docs')
+  subdir('docs')
+endif
 # Tests are disabled on emscripten because they rely on host features that aren't
 # supported by emscripten (e.g. fork and unix socket).
-if host_os != 'emscripten'
+if host_os != 'emscripten' and fs.is_dir(meson.current_source_dir() / 'tests')
   subdir('tests')
 endif
 if gtk.found()

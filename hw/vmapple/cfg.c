@@ -40,11 +40,7 @@ typedef struct VMAppleCfg {
     uint8_t pad1[2];
     MACAddr mac_en1;          /* 0x048 */
     uint8_t pad2[2];
-    MACAddr mac_wifi0;        /* 0x050 */
-    uint8_t pad3[2];
-    MACAddr mac_bt0;          /* 0x058 */
-    uint8_t pad4[2];
-    uint8_t reserved[0xa0];   /* 0x060 */
+    uint8_t reserved[0xb0];   /* 0x050 */
     uint32_t cpu_ids[0x80];   /* 0x100 */
     uint8_t scratch[0x200];   /* 0x180 */
     char serial[32];          /* 0x380 */
