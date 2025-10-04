@@ -4,7 +4,7 @@ CC      ?= gcc
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra -Wshadow
 LDFLAGS ?=
 LDLIBS  ?=
-LDLIBS  += -lm
+LDLIBS  += -lm -lz -lpthread
 
 OUT_DIR := build
 OBJ_DIR := $(OUT_DIR)/obj

@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef SNAPCTL
+#define SNAPCTL_ABS SNAPCTL
+#endif
+
 #ifndef SNAPCTL_ABS
 #define SNAPCTL_ABS "/home/didqls/ws/qemu/ctools/build/snapctl"
 #endif
@@ -10,13 +14,79 @@
 #define SOCKET_PATH "/home/didqls/vm/win11/qmp.sock"
 #endif
 
+#ifndef SNAPCTL_TIMELOG_PATH
+#define SNAPCTL_TIMELOG_PATH ""
+#endif
+
+#ifndef SNAPCTL_SNAPSHOT_DIR
+#define SNAPCTL_SNAPSHOT_DIR ""
+#endif
+
+#ifndef SNAPCTL_BLOCK_MIGRATION_DEFAULT
+#define SNAPCTL_BLOCK_MIGRATION_DEFAULT 0
+#endif
+
+static gboolean is_truthy(const char *value) {
+    if (!value) {
+        return FALSE;
+    }
+    return g_ascii_strcasecmp(value, "1") == 0 ||
+           g_ascii_strcasecmp(value, "true") == 0 ||
+           g_ascii_strcasecmp(value, "yes") == 0 ||
+           g_ascii_strcasecmp(value, "on") == 0;
+}
+
+static void append_optional_arg(GString *cmdline, const char *option, const char *value) {
+    if (!value || !*value) {
+        return;
+    }
+    gchar *quoted = g_shell_quote(value);
+    g_string_append_printf(cmdline, " %s %s", option, quoted);
+    g_free(quoted);
+}
+
 static void run_snapctl(const char *cmd, const char *arg) {
-    char buf[1024];
-    if (arg)
-        snprintf(buf, sizeof(buf), "%s --socket %s %s %s", SNAPCTL_ABS, SOCKET_PATH, cmd, arg);
-    else
-        snprintf(buf, sizeof(buf), "%s --socket %s %s", SNAPCTL_ABS, SOCKET_PATH, cmd);
-    system(buf); // 동기 실행
+    const char *timelog = getenv("SNAPCTL_TIMELOG");
+    if ((!timelog || !*timelog) && SNAPCTL_TIMELOG_PATH[0] != '\0') {
+        timelog = SNAPCTL_TIMELOG_PATH;
+    }
+
+    const char *snapdir = getenv("SNAPCTL_SNAPSHOT_DIR");
+    if ((!snapdir || !*snapdir) && SNAPCTL_SNAPSHOT_DIR[0] != '\0') {
+        snapdir = SNAPCTL_SNAPSHOT_DIR;
+    }
+
+    gboolean block_migration = SNAPCTL_BLOCK_MIGRATION_DEFAULT;
+    const char *block_env = getenv("SNAPCTL_BLOCK_MIGRATION");
+    if (block_env) {
+        block_migration = is_truthy(block_env);
+    }
+
+    GString *cmdline = g_string_new(NULL);
+    gchar *snapctl_quoted = g_shell_quote(SNAPCTL_ABS);
+    gchar *socket_quoted = g_shell_quote(SOCKET_PATH);
+
+    g_string_append_printf(cmdline, "%s --socket %s", snapctl_quoted, socket_quoted);
+
+    append_optional_arg(cmdline, "--timelog", timelog);
+    append_optional_arg(cmdline, "--snapshot-dir", snapdir);
+    if (block_migration) {
+        g_string_append(cmdline, " --block-migration");
+    }
+
+    g_free(snapctl_quoted);
+    g_free(socket_quoted);
+
+    g_string_append_printf(cmdline, " %s", cmd);
+
+    if (arg && *arg) {
+        gchar *arg_quoted = g_shell_quote(arg);
+        g_string_append_printf(cmdline, " %s", arg_quoted);
+        g_free(arg_quoted);
+    }
+
+    system(cmdline->str); // 동기 실행
+    g_string_free(cmdline, TRUE);
 }
 
 static void on_save_clicked(GtkWidget *widget, gpointer entry) {
