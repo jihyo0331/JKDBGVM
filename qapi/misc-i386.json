@@ -493,3 +493,89 @@
 ##
 { 'command': 'xen-event-inject',
   'data': { 'port': 'uint32' } }
+
+##
+# @X86Regs:
+#
+# Snapshot of x86_64 vCPU registers.
+#
+# @rax: RAX
+# @rbx: RBX
+# @rcx: RCX
+# @rdx: RDX
+# @rsi: RSI
+# @rdi: RDI
+# @rbp: RBP
+# @rsp: RSP
+# @r8: R8
+# @r9: R9
+# @r10: R10
+# @r11: R11
+# @r12: R12
+# @r13: R13
+# @r14: R14
+# @r15: R15
+# @rip: RIP (instruction pointer)
+# @rflags: RFLAGS
+# @cs: CS selector
+# @ds: DS selector
+# @es: ES selector
+# @fs: FS selector
+# @gs: GS selector
+# @ss: SS selector
+# @cr0: Control register CR0
+# @cr2: Control register CR2
+# @cr3: Control register CR3
+# @cr4: Control register CR4
+# @cr8: Control register CR8
+# @dr0: Debug register DR0
+# @dr1: Debug register DR1
+# @dr2: Debug register DR2
+# @dr3: Debug register DR3
+# @dr6: Debug register DR6
+# @dr7: Debug register DR7
+#
+# Since: 8.0
+##
+{ 'struct': 'X86Regs',
+  'data': {
+    'rax':'uint64','rbx':'uint64','rcx':'uint64','rdx':'uint64',
+    'rsi':'uint64','rdi':'uint64','rsp':'uint64','rbp':'uint64',
+    'r8':'uint64','r9':'uint64','r10':'uint64','r11':'uint64',
+    'r12':'uint64','r13':'uint64','r14':'uint64','r15':'uint64',
+    'rip':'uint64','rflags':'uint64',
+    'cs':'uint16','ds':'uint16','es':'uint16','fs':'uint16','gs':'uint16','ss':'uint16',
+    'cr0':'uint64','cr2':'uint64','cr3':'uint64','cr4':'uint64','cr8':'uint64',
+    'dr0':'uint64','dr1':'uint64','dr2':'uint64','dr3':'uint64','dr6':'uint64','dr7':'uint64'
+  }
+}
+
+##
+# @x86-info-register:
+#
+# Return vCPU registers as @X86Regs.
+#
+# Since: 8.0
+##
+{ 'command': 'x86-info-register', 'returns': 'X86Regs' }
+
+##
+# @X86RawDump:
+#
+# Raw text of HMP "info registers" dump.
+#
+# @text: Raw dump as UTF-8 string
+#
+# Since: 8.0
+##
+{ 'struct': 'X86RawDump',
+  'data': { 'text': 'str' } }
+
+##
+# @x86-dump-raw:
+#
+# Return the raw textual dump of CPU registers (unparsed).
+#
+# Since: 8.0
+##
+{ 'command': 'x86-dump-raw', 'returns': 'X86RawDump' }
