@@ -610,3 +610,21 @@
 ##
 { 'command': 'vcpu-set-throttle', 
   'data': { 'cpu': 'int', 'percent': 'int', 'period-ms': 'int' } }
+
+  ##
+# @smmu:
+#
+# Enable MMU logging.
+#
+# Since: 9.1
+##
+{ 'command': 'smmu' }
+
+##
+# @qmmu:
+#
+# Disable MMU logging.
+#
+# Since: 9.1
+##
+{ 'command': 'qmmu' }

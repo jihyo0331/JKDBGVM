@@ -51,7 +51,7 @@
 #endif
 #include "tcg/tcg-ldst.h"
 #include "backend-ldst.h"
-
+#include "qapi/qapi-commands-machine.h"
 
 /* DEBUG defines, enable DEBUG_TLB_LOG to log to the CPU_LOG_MMU target */
 /* #define DEBUG_TLB */
@@ -2670,11 +2670,23 @@ static uint64_t do_st16_leN(CPUState *cpu, MMULookupPageData *p,
 static void do_st_1(CPUState *cpu, MMULookupPageData *p, uint8_t val,
                     int mmu_idx, uintptr_t ra)
 {
+    hwaddr paddr = 0;
+
     if (unlikely(p->flags & TLB_MMIO)) {
+        if (mmu_log_enabled){
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x (MMIO)\n",
+               (unsigned long)p->addr, (unsigned long)paddr, val);
+        }
+        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
         do_st_mmio_leN(cpu, p->full, val, p->addr, 1, mmu_idx, ra);
     } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
         /* nothing */
     } else {
+        if (mmu_log_enabled){
+        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x \n",
+               (unsigned long)p->addr, (unsigned long)paddr, val);
+        }
         *(uint8_t *)p->haddr = val;
     }
 }
@@ -2682,7 +2694,15 @@ static void do_st_1(CPUState *cpu, MMULookupPageData *p, uint8_t val,
 static void do_st_2(CPUState *cpu, MMULookupPageData *p, uint16_t val,
                     int mmu_idx, MemOp memop, uintptr_t ra)
 {
+    hwaddr paddr = 0;
+    uint16_t orig_val = val;
+
     if (unlikely(p->flags & TLB_MMIO)) {
+        if (mmu_log_enabled){
+        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x (MMIO)\n",
+               (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+        }
         if ((memop & MO_BSWAP) != MO_LE) {
             val = bswap16(val);
         }
@@ -2690,6 +2710,11 @@ static void do_st_2(CPUState *cpu, MMULookupPageData *p, uint16_t val,
     } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
         /* nothing */
     } else {
+        if (mmu_log_enabled){
+        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x \n",
+               (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+        }
         /* Swap to host endian if necessary, then store. */
         if (memop & MO_BSWAP) {
             val = bswap16(val);
@@ -2701,7 +2726,15 @@ static void do_st_2(CPUState *cpu, MMULookupPageData *p, uint16_t val,
 static void do_st_4(CPUState *cpu, MMULookupPageData *p, uint32_t val,
                     int mmu_idx, MemOp memop, uintptr_t ra)
 {
+    hwaddr paddr = 0;
+    uint32_t orig_val = val;
+
     if (unlikely(p->flags & TLB_MMIO)) {
+        if (mmu_log_enabled){
+        paddr = p->full->phys_addr+ (p->addr & ~TARGET_PAGE_MASK);
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x (MMIO)\n",
+               (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+        }
         if ((memop & MO_BSWAP) != MO_LE) {
             val = bswap32(val);
         }
@@ -2709,6 +2742,11 @@ static void do_st_4(CPUState *cpu, MMULookupPageData *p, uint32_t val,
     } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
         /* nothing */
     } else {
+        if (mmu_log_enabled){
+        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x \n",
+               (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+        }
         /* Swap to host endian if necessary, then store. */
         if (memop & MO_BSWAP) {
             val = bswap32(val);
@@ -2720,7 +2758,15 @@ static void do_st_4(CPUState *cpu, MMULookupPageData *p, uint32_t val,
 static void do_st_8(CPUState *cpu, MMULookupPageData *p, uint64_t val,
                     int mmu_idx, MemOp memop, uintptr_t ra)
 {
+    hwaddr paddr = 0;
+    uint64_t orig_val = val;
+
     if (unlikely(p->flags & TLB_MMIO)) {
+        if (mmu_log_enabled){
+        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx (MMIO)\n",
+               (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+        }
         if ((memop & MO_BSWAP) != MO_LE) {
             val = bswap64(val);
         }
@@ -2728,6 +2774,11 @@ static void do_st_8(CPUState *cpu, MMULookupPageData *p, uint64_t val,
     } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
         /* nothing */
     } else {
+        if (mmu_log_enabled){
+                    paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
+        printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx \n",
+               (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+        }
         /* Swap to host endian if necessary, then store. */
         if (memop & MO_BSWAP) {
             val = bswap64(val);
@@ -2762,6 +2813,8 @@ static void do_st2_mmu(CPUState *cpu, vaddr addr, uint16_t val,
         do_st_2(cpu, &l.page[0], val, l.mmu_idx, l.memop, ra);
         return;
     }
+
+
 
     if ((l.memop & MO_BSWAP) == MO_LE) {
         a = val, b = val >> 8;
@@ -2825,7 +2878,14 @@ static void do_st16_mmu(CPUState *cpu, vaddr addr, Int128 val,
     cpu_req_mo(cpu, TCG_MO_LD_ST | TCG_MO_ST_ST);
     crosspage = mmu_lookup(cpu, addr, oi, ra, MMU_DATA_STORE, &l);
     if (likely(!crosspage)) {
+        hwaddr paddr = 0;
         if (unlikely(l.page[0].flags & TLB_MMIO)) {
+            if (mmu_log_enabled){
+            paddr = l.page[0].full->xlat_section + (addr & ~TARGET_PAGE_MASK);
+            printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx (MMIO)\n",
+                   (unsigned long)addr, (unsigned long)paddr,
+                   (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
+            }
             if ((l.memop & MO_BSWAP) != MO_LE) {
                 val = bswap128(val);
             }
@@ -2833,6 +2893,12 @@ static void do_st16_mmu(CPUState *cpu, vaddr addr, Int128 val,
         } else if (unlikely(l.page[0].flags & TLB_DISCARD_WRITE)) {
             /* nothing */
         } else {
+            if (mmu_log_enabled){
+            paddr = l.page[0].full->xlat_section + (addr & ~TARGET_PAGE_MASK);
+            printf("[MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx \n",
+                   (unsigned long)addr, (unsigned long)paddr,
+                   (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
+            }
             /* Swap to host endian if necessary, then store. */
             if (l.memop & MO_BSWAP) {
                 val = bswap128(val);

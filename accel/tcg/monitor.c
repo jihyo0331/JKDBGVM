@@ -14,6 +14,20 @@
 #include "system/tcg.h"
 #include "tcg/tcg.h"
 #include "internal-common.h"
+#include "exec/log.h"
+#include "qapi/qapi-commands-misc.h" 
+
+void qmp_smmu(Error **errp)
+{
+    mmu_log_enabled = true;
+    qemu_log("MMU write logging enabled.\n");
+}
+
+void qmp_qmmu(Error **errp)
+{
+    mmu_log_enabled = false;
+    qemu_log("MMU write logging disabled.\n");
+}
 
 HumanReadableText *qmp_x_query_jit(Error **errp)
 {

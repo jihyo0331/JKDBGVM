@@ -24,6 +24,7 @@
 #include "internal-common.h"
 
 bool tcg_allowed;
+bool mmu_log_enabled = false;
 
 bool tcg_cflags_has(CPUState *cpu, uint32_t flags)
 {

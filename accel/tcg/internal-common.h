@@ -141,4 +141,6 @@ void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr);
 
 void tcg_get_stats(AccelState *accel, GString *buf);
 
-#endif
+extern bool mmu_log_enabled;
+
+#endif /* ACCEL_TCG_INTERNAL_COMMON_H */
