@@ -1295,77 +1295,68 @@ static char *qmp_exec_simple(const char *json) {
     return resp;
 }
 
+static bool qmp_command_not_found(const char *resp) {
+    return resp && strstr(resp, "\"CommandNotFound\"") != NULL;
+}
+
 static char *qmp_hmp_passthru(const char *hmp) {
     int fd = qmp_open_and_negotiate();
     if (fd < 0) {
         return NULL;
     }
-    char *resp = NULL;
+
     char *payload = NULL;
-    
     if (asprintf(&payload,
                  "{\"execute\":\"human-monitor-command\",\"arguments\":{\"command-line\":\"%s\"}}",
-                 hmp) < 0) payload = NULL;
-    if (!payload) { close(fd); return NULL; }
+                 hmp) < 0) {
+        payload = NULL;
+    }
+    if (!payload) {
+        close(fd);
+        return NULL;
+    }
 
+    char *resp = NULL;
     if (send_line(fd, payload) == 0) {
         errno = 0;
         resp = read_resp_line(fd);
+        if (!resp && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+            timing_log(LOG_ERROR, "HMP 응답을 읽지 못했습니다");
+        }
     } else {
         timing_log(LOG_ERROR, "HMP 명령 전송 실패: %s", strerror(errno));
     }
-    if (!resp && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
-        timing_log(LOG_ERROR, "HMP 응답을 읽지 못했습니다");
-    }
+
     free(payload);
     close(fd);
     return resp;
 }
 
-static int qmp_run_command(const char *json, const char *hmp, const char *label, const char *nonfatal_substr) {
-    int rc = -1;
+static int qmp_run_command(const char *json, const char *label, const char *nonfatal_substr) {
     char *resp = qmp_exec_simple(json);
-    if (resp) {
-        if (!looks_like_qmp_error(resp)) {
-            rc = 0;
-        } else if (nonfatal_substr && strstr(resp, nonfatal_substr)) {
-            rc = 0;
-        } else if (label) {
-            timing_log(LOG_WARN, "%s QMP 응답: %s", label, resp);
-        }
-        free(resp);
+    if (!resp) {
+        return -1;
     }
 
-    if (rc == 0) {
-        return 0;
+    int rc = -1;
+    if (!looks_like_qmp_error(resp)) {
+        rc = 0;
+    } else if (nonfatal_substr && strstr(resp, nonfatal_substr)) {
+        rc = 0;
+    } else if (label) {
+        timing_log(LOG_WARN, "%s QMP 응답: %s", label, resp);
     }
 
-    if (hmp) {
-        resp = qmp_hmp_passthru(hmp);
-        bool ok = resp && strstr(resp, "error") == NULL && strstr(resp, "Error") == NULL;
-        if (!ok && nonfatal_substr && resp && strstr(resp, nonfatal_substr)) {
-            ok = true;
-        }
-        if (!ok && label) {
-            timing_log(LOG_WARN, "%s HMP 응답: %s", label, resp ? resp : "(null)");
-        }
-        if (resp) {
-            free(resp);
-        }
-        if (ok) {
-            rc = 0;
-        }
-    }
-
+    free(resp);
     return rc;
 }
 
 static int qmp_stop_vm(void) {
-    return qmp_run_command("{\"execute\":\"stop\"}", "stop", "stop", "already");
+    return qmp_run_command("{\"execute\":\"stop\"}", "stop", "already");
 }
 
 static int qmp_resume_vm(void) {
-    return qmp_run_command("{\"execute\":\"cont\"}", "cont", "cont", "already");
+    return qmp_run_command("{\"execute\":\"cont\"}", "cont", "already");
 }
 
 /* ---------- 상태 확인 및 resume 보정 (개선됨) ---------- */
@@ -1380,32 +1371,34 @@ static bool snapshot_exists(const char *name) {
     }
 
     char *resp = qmp_exec_simple("{\"execute\":\"query-savevm\"}");
-    if (resp) {
-        bool found = strstr(resp, name) != NULL;
-        free(resp);
-        if (found) {
-            return true;
+    if (!resp) {
+        return false;
+    }
+
+    bool found = false;
+    bool fallback = false;
+    if (looks_like_qmp_error(resp)) {
+        if (qmp_command_not_found(resp)) {
+            fallback = true;
+        } else {
+            timing_log(LOG_WARN, "query-savevm QMP 응답: %s", resp);
         }
+    } else {
+        found = strstr(resp, name) != NULL;
+    }
+
+    free(resp);
+    if (!fallback) {
+        return found;
     }
 
     resp = qmp_hmp_passthru("info snapshots");
     if (!resp) {
         return false;
     }
-    bool found = strstr(resp, name) != NULL;
+    found = strstr(resp, name) != NULL;
     free(resp);
     return found;
-}
-
-static bool vm_running_hmp(void) {
-    char *resp = qmp_hmp_passthru("info status");
-    if (!resp) {
-        timing_log(LOG_WARN, "VM 실행 상태를 확인하지 못했습니다 (HMP)");
-        return false;
-    }
-    bool running = strstr(resp, "running") != NULL;
-    free(resp);
-    return running;
 }
 
 static bool qmp_is_running(void) {
@@ -1414,13 +1407,13 @@ static bool qmp_is_running(void) {
         return false;
     }
 
+    bool ok = false;
     if (looks_like_qmp_error(resp)) {
-        bool unsupported = strstr(resp, "\"CommandNotFound\"") != NULL;
-        free(resp);
-        return unsupported && vm_running_hmp();
+        timing_log(LOG_WARN, "query-status QMP 응답: %s", resp);
+    } else {
+        ok = looks_running(resp);
     }
 
-    bool ok = looks_running(resp);
     free(resp);
     return ok;
 }
@@ -1469,7 +1462,7 @@ static int qmp_ensure_running(void) {
         
         // cont 명령 여러 번 시도
         for (int j = 0; j < 3; j++) {
-            qmp_run_command("{\"execute\":\"cont\"}", "cont", "cont(retry)", "already");
+            qmp_run_command("{\"execute\":\"cont\"}", "cont(retry)", "already");
 
             struct timespec short_wait = { .tv_sec = 0, .tv_nsec = 10 * 1000 * 1000 };
             nanosleep(&short_wait, NULL);
@@ -1503,21 +1496,22 @@ static int save_snapshot(const char *name) {
     char json[1024];
     snprintf(json, sizeof(json), "{\"execute\":\"savevm\",\"arguments\":{\"name\":\"%s\"}}", name);
     char *resp = qmp_exec_simple(json);
-    
+
     // QMP 응답 분석 (빈 응답도 성공으로 간주)
+    bool fallback = false;
     if (resp) {
         if (!looks_like_qmp_error(resp)) {
             success = true;
-        } else if (strstr(resp, "\"CommandNotFound\"")) {
+        } else if (qmp_command_not_found(resp)) {
+            fallback = true;
             timing_log(LOG_INFO, "savevm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다");
         } else {
             timing_log(LOG_ERROR, "savevm QMP 응답: %s", resp);
         }
         free(resp);
     }
-    
-    // QMP가 실패했다면 HMP 폴백
-    if (!success) {
+
+    if (!success && fallback) {
         char hmp[1024];
         snprintf(hmp, sizeof(hmp), "savevm %s", name);
         resp = qmp_hmp_passthru(hmp);
@@ -1555,10 +1549,12 @@ static int load_snapshot_internal(const char *name) {
     char json[1024];
     snprintf(json, sizeof(json), "{\"execute\":\"loadvm\",\"arguments\":{\"name\":\"%s\"}}", name);
     char *resp = qmp_exec_simple(json);
+    bool fallback = false;
     if (resp) {
         if (!looks_like_qmp_error(resp)) {
             success = true;
-        } else if (strstr(resp, "\"CommandNotFound\"")) {
+        } else if (qmp_command_not_found(resp)) {
+            fallback = true;
             timing_log(LOG_INFO, "loadvm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다");
         } else {
             timing_log(LOG_WARN, "loadvm QMP 응답: %s", resp);
@@ -1566,8 +1562,7 @@ static int load_snapshot_internal(const char *name) {
         free(resp);
     }
 
-    // HMP 폴백
-    if (!success) {
+    if (!success && fallback) {
         char hmp[1024];
         snprintf(hmp, sizeof(hmp), "loadvm %s", name);
         resp = qmp_hmp_passthru(hmp);
@@ -1611,18 +1606,36 @@ static int delete_snapshot_internal(const char *name) {
     char json[1024];
     snprintf(json, sizeof(json), "{\"execute\":\"delvm\",\"arguments\":{\"name\":\"%s\"}}", name);
     char *resp = qmp_exec_simple(json);
-    
-    if (resp && !looks_like_qmp_error(resp)) { 
-        free(resp); 
-        return 0; 
+
+    if (!resp) {
+        return -1;
+    }
+
+    bool fallback = false;
+    bool ok = false;
+    if (!looks_like_qmp_error(resp)) {
+        ok = true;
+    } else if (qmp_command_not_found(resp)) {
+        fallback = true;
+        timing_log(LOG_INFO, "delvm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다");
+    } else {
+        timing_log(LOG_WARN, "delvm QMP 응답: %s", resp);
     }
     free(resp);
-    
-    char hmp[1024];
-    snprintf(hmp, sizeof(hmp), "delvm %s", name);
-    resp = qmp_hmp_passthru(hmp);
-    bool ok = (resp && strstr(resp, "error") == NULL && strstr(resp, "Error") == NULL);
-    free(resp);
+
+    if (!ok && fallback) {
+        char hmp[1024];
+        snprintf(hmp, sizeof(hmp), "delvm %s", name);
+        resp = qmp_hmp_passthru(hmp);
+        if (resp) {
+            ok = (strstr(resp, "error") == NULL && strstr(resp, "Error") == NULL);
+            if (!ok) {
+                timing_log(LOG_WARN, "delvm HMP 응답: %s", resp);
+            }
+            free(resp);
+        }
+    }
+
     return ok ? 0 : -1;
 }
 
@@ -1635,15 +1648,32 @@ static int delete_snapshot(const char *name) {
 
 static int list_snapshots(void) {
     char *resp = qmp_exec_simple("{\"execute\":\"query-savevm\"}");
-    if (resp && !looks_like_qmp_error(resp)) {
+    if (!resp) {
+        return -1;
+    }
+
+    bool fallback = false;
+    if (looks_like_qmp_error(resp)) {
+        if (qmp_command_not_found(resp)) {
+            fallback = true;
+        } else {
+            timing_log(LOG_WARN, "query-savevm QMP 응답: %s", resp);
+        }
+        free(resp);
+    } else {
         printf("%s", resp);
         free(resp);
         return 0;
     }
-    free(resp);
-    
+
+    if (!fallback) {
+        return -1;
+    }
+
     resp = qmp_hmp_passthru("info snapshots");
-    if (!resp) return -1;
+    if (!resp) {
+        return -1;
+    }
     printf("%s", resp);
     free(resp);
     return 0;
