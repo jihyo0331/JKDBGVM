@@ -451,3 +451,104 @@
 [2025-10-11 05:09:40] [DEBUG] Timing start: snapctl savevm:save14
 [2025-10-11 05:09:40] [DEBUG] Starting savevm for snapshot: save14
 [2025-10-11 05:09:40] [INFO] savevm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다
+[2025-10-11 06:56:32] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 06:56:32] [DEBUG] Timing start: snapctl savevm:test123
+[2025-10-11 06:56:32] [DEBUG] Starting savevm for snapshot: test123
+[2025-10-11 06:56:32] [INFO] 스냅샷 아카이브 디렉터리를 생성했습니다: /home/park/vm/win11/snapshots
+[2025-10-11 06:57:34] [DEBUG] snapctl savevm:test123: 61.399 s (61399 ms)
+[2025-10-11 06:57:34] [ERROR] savevm 'test123' 실패 (61.399 s)
+[2025-10-11 06:57:49] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 06:57:49] [DEBUG] Timing start: snapctl savevm:test123
+[2025-10-11 06:57:49] [DEBUG] Starting savevm for snapshot: test123
+[2025-10-11 06:58:49] [ERROR] migration 완료 대기 시간 초과
+[2025-10-11 06:58:49] [ERROR] 메모리 스냅샷 저장 실패 (test123)
+[2025-10-11 06:58:50] [DEBUG] snapctl savevm:test123: 61.300 s (61300 ms)
+[2025-10-11 06:58:50] [ERROR] savevm 'test123' 실패 (61.300 s)
+[2025-10-11 04:30:41] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 04:30:41] [DEBUG] Timing start: snapctl savevm:test12
+[2025-10-11 04:30:41] [DEBUG] Starting savevm for snapshot: test12
+[2025-10-11 04:30:41] [INFO] savevm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다
+[2025-10-11 04:30:45] [DEBUG] snapctl savevm:test12: 3.489 s (3489 ms)
+[2025-10-11 04:30:45] [INFO] savevm 'test12' 성공 (3.489 s)
+[2025-10-11 04:30:45] [DEBUG] Timing start: snapctl archive
+[2025-10-11 04:30:45] [DEBUG] Timing start: partial disk copy
+[2025-10-11 04:30:45] [DEBUG] partial disk copy: 0.127 s (127 ms)
+[2025-10-11 04:30:45] [DEBUG] Timing start: partial disk compress
+[2025-10-11 04:30:52] [DEBUG] partial disk compress: 7.103 s (7103 ms)
+[2025-10-11 04:30:52] [INFO] 디스크 부분 스냅샷 압축 완료: /home/park/vm/win11/snapshots/test12-disk.bz2 (100.0 MB, 7.10 s)
+[2025-10-11 04:30:52] [DEBUG] Timing start: dump guest memory slice
+[2025-10-11 04:30:52] [DEBUG] dump guest memory slice: 0.344 s (344 ms)
+[2025-10-11 04:30:52] [INFO] 메모리 부분 덤프 완료 (256.0 MB, 0.34 s): /home/park/vm/win11/snapshots/test12-mem.raw
+[2025-10-11 04:30:52] [DEBUG] Timing start: compress memory slice
+[2025-10-11 04:30:55] [DEBUG] compress memory slice: 2.028 s (2028 ms)
+[2025-10-11 04:30:55] [INFO] 메모리 부분 스냅샷 압축 완료: /home/park/vm/win11/snapshots/test12-mem.bz2 (2.03 s)
+[2025-10-11 04:30:55] [DEBUG] snapctl archive: 9.652 s (9652 ms)
+[2025-10-11 04:31:01] [INFO] fast snapshot 번들을 생성했습니다: /home/park/vm/win11/snapshots/test12-fast-snapshot.tar.bz2
+[2025-10-11 04:31:01] [INFO] 스냅샷 보조 아카이브 및 fast snapshot 번들 완료: test12 (9.65 s)
+[2025-10-11 04:41:39] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 04:41:39] [DEBUG] Timing start: snapctl loadvm:test12
+[2025-10-11 04:41:39] [INFO] loadvm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다
+[2025-10-11 04:41:45] [DEBUG] Timing start: restore disk slice
+[2025-10-11 04:41:45] [DEBUG] restore disk slice: 0.044 s (44 ms)
+[2025-10-11 04:41:45] [INFO] 디스크 보조 스냅샷을 복원했습니다 (100.0 MB, 0.04 s)
+[2025-10-11 04:41:45] [INFO] 메모리 보조 스냅샷을 해제했습니다 (255.7 MB): /home/park/vm/win11/snapshots/test12-mem.raw
+[2025-10-11 04:41:45] [INFO] 주의: dump-guest-memory 결과는 참조용이며 loadvm이 메모리를 복원합니다.
+[2025-10-11 04:41:45] [INFO] 보조 스냅샷 복원 완료: test12
+[2025-10-11 04:41:45] [DEBUG] snapctl loadvm:test12: 6.867 s (6867 ms)
+[2025-10-11 04:41:45] [INFO] loadvm 'test12' 성공 (6.867 s)
+[2025-10-11 04:42:26] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 04:44:57] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 04:44:57] [DEBUG] Timing start: snapctl savevm:test34
+[2025-10-11 04:44:57] [DEBUG] Starting savevm for snapshot: test34
+[2025-10-11 04:44:57] [INFO] savevm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다
+[2025-10-11 04:45:04] [DEBUG] snapctl savevm:test34: 6.751 s (6751 ms)
+[2025-10-11 04:45:04] [INFO] savevm 'test34' 성공 (6.751 s)
+[2025-10-11 04:45:04] [DEBUG] Timing start: snapctl archive
+[2025-10-11 04:45:04] [DEBUG] Timing start: partial disk copy
+[2025-10-11 04:45:04] [DEBUG] partial disk copy: 0.092 s (92 ms)
+[2025-10-11 04:45:04] [DEBUG] Timing start: partial disk compress
+[2025-10-11 04:45:12] [DEBUG] partial disk compress: 7.936 s (7936 ms)
+[2025-10-11 04:45:12] [INFO] 디스크 부분 스냅샷 압축 완료: /home/park/vm/win11/snapshots/test34-disk.bz2 (100.0 MB, 7.94 s)
+[2025-10-11 04:45:12] [DEBUG] Timing start: dump guest memory slice
+[2025-10-11 04:45:12] [DEBUG] dump guest memory slice: 0.297 s (297 ms)
+[2025-10-11 04:45:12] [INFO] 메모리 부분 덤프 완료 (256.0 MB, 0.30 s): /home/park/vm/win11/snapshots/test34-mem.raw
+[2025-10-11 04:45:12] [DEBUG] Timing start: compress memory slice
+[2025-10-11 04:45:15] [DEBUG] compress memory slice: 3.154 s (3154 ms)
+[2025-10-11 04:45:15] [INFO] 메모리 부분 스냅샷 압축 완료: /home/park/vm/win11/snapshots/test34-mem.bz2 (3.15 s)
+[2025-10-11 04:45:15] [DEBUG] snapctl archive: 11.525 s (11525 ms)
+[2025-10-11 04:45:22] [INFO] fast snapshot 번들을 생성했습니다: /home/park/vm/win11/snapshots/test34-fast-snapshot.tar.bz2
+[2025-10-11 04:45:22] [INFO] 스냅샷 보조 아카이브 및 fast snapshot 번들 완료: test34 (11.53 s)
+[2025-10-11 04:49:14] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 04:56:16] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 04:56:16] [DEBUG] Timing start: snapctl loadvm:test34
+[2025-10-11 04:56:16] [INFO] loadvm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다
+[2025-10-11 04:56:23] [DEBUG] Timing start: restore disk slice
+[2025-10-11 04:56:23] [DEBUG] restore disk slice: 0.068 s (68 ms)
+[2025-10-11 04:56:23] [INFO] 디스크 보조 스냅샷을 복원했습니다 (100.0 MB, 0.07 s)
+[2025-10-11 04:56:24] [INFO] 메모리 보조 스냅샷을 해제했습니다 (255.8 MB): /home/park/vm/win11/snapshots/test34-mem.raw
+[2025-10-11 04:56:24] [INFO] 주의: dump-guest-memory 결과는 참조용이며 loadvm이 메모리를 복원합니다.
+[2025-10-11 04:56:24] [INFO] 보조 스냅샷 복원 완료: test34
+[2025-10-11 04:56:24] [DEBUG] snapctl loadvm:test34: 7.706 s (7706 ms)
+[2025-10-11 04:56:24] [INFO] loadvm 'test34' 성공 (7.706 s)
+[2025-10-11 05:25:41] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 05:25:41] [DEBUG] Timing start: snapctl loadvm:test12
+[2025-10-11 05:25:41] [INFO] loadvm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다
+[2025-10-11 05:25:48] [DEBUG] Timing start: restore disk slice
+[2025-10-11 05:25:48] [DEBUG] restore disk slice: 0.056 s (56 ms)
+[2025-10-11 05:25:48] [INFO] 디스크 보조 스냅샷을 복원했습니다 (100.0 MB, 0.06 s)
+[2025-10-11 05:25:49] [INFO] 메모리 보조 스냅샷을 해제했습니다 (255.7 MB): /home/park/vm/win11/snapshots/test12-mem.raw
+[2025-10-11 05:25:49] [INFO] 주의: dump-guest-memory 결과는 참조용이며 loadvm이 메모리를 복원합니다.
+[2025-10-11 05:25:49] [INFO] 보조 스냅샷 복원 완료: test12
+[2025-10-11 05:25:49] [DEBUG] snapctl loadvm:test12: 8.322 s (8322 ms)
+[2025-10-11 05:25:49] [INFO] loadvm 'test12' 성공 (8.322 s)
+[2025-10-11 05:26:16] [INFO] timing log file: snapctl-timing.log
+[2025-10-11 05:26:16] [DEBUG] Timing start: snapctl loadvm:test34
+[2025-10-11 05:26:16] [INFO] loadvm QMP 명령이 지원되지 않아 HMP 경로로 폴백합니다
+[2025-10-11 05:26:23] [DEBUG] Timing start: restore disk slice
+[2025-10-11 05:26:23] [DEBUG] restore disk slice: 0.081 s (81 ms)
+[2025-10-11 05:26:23] [INFO] 디스크 보조 스냅샷을 복원했습니다 (100.0 MB, 0.08 s)
+[2025-10-11 05:26:24] [INFO] 메모리 보조 스냅샷을 해제했습니다 (255.8 MB): /home/park/vm/win11/snapshots/test34-mem.raw
+[2025-10-11 05:26:24] [INFO] 주의: dump-guest-memory 결과는 참조용이며 loadvm이 메모리를 복원합니다.
+[2025-10-11 05:26:24] [INFO] 보조 스냅샷 복원 완료: test34
+[2025-10-11 05:26:24] [DEBUG] snapctl loadvm:test34: 8.202 s (8202 ms)
+[2025-10-11 05:26:24] [INFO] loadvm 'test34' 성공 (8.202 s)
