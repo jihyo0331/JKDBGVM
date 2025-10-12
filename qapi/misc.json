@@ -612,9 +612,55 @@
   'data': { 'cpu': 'int', 'percent': 'int', 'period-ms': 'int' } }
 
   ##
+# @sfmmu:
+#
+# Enable fast-path MMU write logging.
+#
+# Since: 9.1
+##
+{ 'command': 'sfmmu' }
+
+##
+# @qfmmu:
+#
+# Disable fast-path MMU write logging.
+#
+# Since: 9.1
+##
+{ 'command': 'qfmmu' }
+
+##
+# @ssmmu:
+#
+# Enable slow-path MMU write logging.
+#
+# Since: 9.1
+##
+{ 'command': 'ssmmu' }
+
+##
+# @qsmmu:
+#
+# Disable slow-path MMU write logging.
+#
+# Since: 9.1
+##
+{ 'command': 'qsmmu' }
+
+##
+# @wmmu:
+#
+# Enable logging of both fast-path and slow-path MMU writes to a log file
+# located at ../vm/mmu.log (relative to the QEMU working directory).
+#
+# Since: 9.1
+##
+{ 'command': 'wmmu' }
+
+##
 # @smmu:
 #
-# Enable MMU logging.
+# Enable both fast-path and slow-path MMU write logging (legacy alias).
 #
 # Since: 9.1
 ##
@@ -623,7 +669,7 @@
 ##
 # @qmmu:
 #
-# Disable MMU logging.
+# Disable both fast-path and slow-path MMU write logging (legacy alias).
 #
 # Since: 9.1
 ##

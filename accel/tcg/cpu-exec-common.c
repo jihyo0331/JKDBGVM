@@ -22,9 +22,13 @@
 #include "system/tcg.h"
 #include "qemu/plugin.h"
 #include "internal-common.h"
+#include <stdio.h>
 
 bool tcg_allowed;
-bool mmu_log_enabled = false;
+bool mmu_fast_log_enabled = false;
+bool mmu_slow_log_enabled = false;
+bool mmu_log_to_file = false;
+FILE *mmu_log_file = NULL;
 
 bool tcg_cflags_has(CPUState *cpu, uint32_t flags)
 {

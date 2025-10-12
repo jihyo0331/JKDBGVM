@@ -13,6 +13,7 @@
 #include "exec/translation-block.h"
 #include "exec/mmap-lock.h"
 #include "accel/tcg/tb-cpu-state.h"
+#include <stdio.h>
 
 extern int64_t max_delay;
 extern int64_t max_advance;
@@ -141,6 +142,9 @@ void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr);
 
 void tcg_get_stats(AccelState *accel, GString *buf);
 
-extern bool mmu_log_enabled;
+extern bool mmu_fast_log_enabled;
+extern bool mmu_slow_log_enabled;
+extern bool mmu_log_to_file;
+extern FILE *mmu_log_file;
 
 #endif /* ACCEL_TCG_INTERNAL_COMMON_H */
