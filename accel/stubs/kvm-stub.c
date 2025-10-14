@@ -12,6 +12,7 @@
 
 #include "qemu/osdep.h"
 #include "system/kvm.h"
+#include "system/kvm-throttle.h"
 #include "hw/pci/msi.h"
 
 KVMState *kvm_state;
@@ -124,4 +125,22 @@ bool kvm_hwpoisoned_mem(void)
 int kvm_create_guest_memfd(uint64_t size, uint64_t flags, Error **errp)
 {
     return -ENOSYS;
+}
+
+ThrottleCfg *kvm_thr_get(CPUState *cpu)
+{
+    (void)cpu;
+    return NULL;
+}
+
+void kvm_thr_set_all(int cpu_index, int percent, int period_ms)
+{
+    (void)cpu_index;
+    (void)percent;
+    (void)period_ms;
+}
+
+void kvm_thr_tick_before_exec(CPUState *cpu)
+{
+    (void)cpu;
 }

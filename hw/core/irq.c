@@ -31,14 +31,11 @@
 #include "qapi/type-helpers.h"
 #include "hw/irq.h"
 #include "qom/object.h"
-#ifdef CONFIG_ARM_GIC
 #include "hw/intc/arm_gic_common.h"
-#endif
 #include "qemu/timer.h"
 
 static const char *irq_classification(IRQState *irq)
 {
-#ifdef CONFIG_ARM_GIC
     for (Object *obj = OBJECT(irq); obj; obj = obj->parent) {
         if (object_dynamic_cast(obj, TYPE_ARM_GIC_COMMON)) {
             if (irq->n < 16) {
@@ -51,7 +48,6 @@ static const char *irq_classification(IRQState *irq)
             return "hardware (SPI)";
         }
     }
-#endif
 
     return "hardware";
 }
@@ -59,7 +55,7 @@ static const char *irq_classification(IRQState *irq)
 static int irq_log_enabled;
 
 #if defined(__GNUC__)
-#pragma weak lookup_symbol
+extern const char *lookup_symbol(uint64_t) __attribute__((weak));
 #endif
 
 #define IRQ_LOG_RING_SIZE 1024

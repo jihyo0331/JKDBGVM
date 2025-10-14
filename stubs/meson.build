@@ -10,6 +10,7 @@ stub_ss.add(files('is-daemonized.c'))
 stub_ss.add(files('monitor-core.c'))
 stub_ss.add(files('replay-mode.c'))
 stub_ss.add(files('trace-control.c'))
+stub_ss.add(files('lookup-symbol.c'))
 
 if have_block
   stub_ss.add(files('bdrv-next-monitor-owned.c'))
@@ -82,6 +83,7 @@ if have_system
   stub_ss.add(files('monitor-i386-sev.c'))
   stub_ss.add(files('monitor-i386-sgx.c'))
   stub_ss.add(files('monitor-i386-xen.c'))
+  stub_ss.add(files('monitor-i386-cpu.c'))
   stub_ss.add(files('monitor-cpu.c'))
   stub_ss.add(files('monitor-cpu-s390x.c'))
   stub_ss.add(files('monitor-cpu-s390x-kvm.c'))
