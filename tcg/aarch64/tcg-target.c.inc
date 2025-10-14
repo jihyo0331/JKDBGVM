@@ -12,6 +12,11 @@
 
 #include "qemu/bitops.h"
 
+#if !defined(CONFIG_USER_ONLY)
+struct CPUArchState;
+extern TCGHelperInfo info_helper_log_store_fastpath;
+#endif
+
 /* Used for function call generation. */
 #define TCG_REG_CALL_STACK              TCG_REG_SP
 #define TCG_TARGET_STACK_ALIGN          16
@@ -1594,6 +1599,111 @@ typedef struct {
     TCGAtomAlign aa;
 } HostAddress;
 
+#if !defined(CONFIG_USER_ONLY)
+static void add_saved_reg(TCGReg *saved, int *saved_count, TCGReg reg)
+{
+    if ((int)reg < 0 || reg == TCG_REG_XZR || reg == TCG_REG_SP) {
+        return;
+    }
+    for (int i = 0; i < *saved_count; ++i) {
+        if (saved[i] == reg) {
+            return;
+        }
+    }
+    saved[(*saved_count)++] = reg;
+}
+
+static void tcg_out_fastpath_store_log(TCGContext *s, const HostAddress *h,
+                                       TCGReg datalo, TCGReg datahi,
+                                       TCGReg addr_reg, MemOpIdx oi)
+{
+    if (!tcg_use_softmmu) {
+        return;
+    }
+
+    TCGReg saved[8];
+    int saved_count = 0;
+
+    add_saved_reg(saved, &saved_count, datalo);
+    add_saved_reg(saved, &saved_count, datahi);
+    add_saved_reg(saved, &saved_count, h->base);
+    add_saved_reg(saved, &saved_count, h->index);
+    add_saved_reg(saved, &saved_count, addr_reg);
+
+    int stack_slots = saved_count ? saved_count : 0;
+    int stack_slots_aligned = (stack_slots + 1) & ~1;
+    int stack_size = stack_slots_aligned * 8;
+
+    if (stack_size) {
+        tcg_out_insn(s, 3401, SUBI, TCG_TYPE_I64,
+                     TCG_REG_SP, TCG_REG_SP, stack_size);
+        int offset = 0;
+        for (int i = 0; i < saved_count; ++i, offset += 8) {
+            tcg_out_st(s, TCG_TYPE_I64, saved[i], TCG_REG_SP, offset);
+        }
+    }
+
+    tcg_out_mov(s, TCG_TYPE_PTR, TCG_REG_X0, TCG_AREG0);
+
+    if ((int)addr_reg >= 0) {
+        TCGType addr_type = s->addr_type <= TCG_TYPE_I32 ? TCG_TYPE_I32
+                                                         : TCG_TYPE_I64;
+        tcg_out_mov(s, addr_type, TCG_REG_X1, addr_reg);
+        if (addr_type == TCG_TYPE_I32) {
+            tcg_out_ext32u(s, TCG_REG_X1, TCG_REG_X1);
+        }
+    } else {
+        tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_X1, 0);
+    }
+
+    MemOp memop = get_memop(oi);
+    TCGType val_type = (memop & MO_SIZE) <= MO_32 ? TCG_TYPE_I32
+                                                  : TCG_TYPE_I64;
+
+    if ((int)datalo >= 0) {
+        tcg_out_mov(s, val_type, TCG_REG_X2, datalo);
+        if (val_type == TCG_TYPE_I32) {
+            tcg_out_ext32u(s, TCG_REG_X2, TCG_REG_X2);
+        }
+    } else {
+        tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_X2, 0);
+    }
+
+    if ((memop & MO_SIZE) == MO_128 && (int)datahi >= 0) {
+        tcg_out_mov(s, TCG_TYPE_I64, TCG_REG_X3, datahi);
+    } else {
+        tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_X3, 0);
+    }
+
+    tcg_out_movi(s, TCG_TYPE_I32, TCG_REG_X4, oi);
+
+    tcg_out_call(s, (const tcg_insn_unit *)helper_log_store_fastpath,
+                 &info_helper_log_store_fastpath);
+
+    if (stack_size) {
+        int offset = 0;
+        for (int i = 0; i < saved_count; ++i, offset += 8) {
+            tcg_out_ld(s, TCG_TYPE_I64, saved[i], TCG_REG_SP, offset);
+        }
+        tcg_out_insn(s, 3401, ADDI, TCG_TYPE_I64,
+                     TCG_REG_SP, TCG_REG_SP, stack_size);
+    }
+}
+#else
+static inline void tcg_out_fastpath_store_log(TCGContext *s,
+                                              const HostAddress *h,
+                                              TCGReg datalo, TCGReg datahi,
+                                              TCGReg addr_reg, MemOpIdx oi)
+{
+    (void)s;
+    (void)h;
+    (void)datalo;
+    (void)datahi;
+    (void)addr_reg;
+    (void)oi;
+}
+#endif
+
 bool tcg_target_has_memory_bswap(MemOp memop)
 {
     return false;
@@ -1830,6 +1940,7 @@ static void tgen_qemu_st(TCGContext *s, TCGType data_type, TCGReg data_reg,
     HostAddress h;
 
     ldst = prepare_host_addr(s, &h, addr_reg, oi, false);
+    tcg_out_fastpath_store_log(s, &h, data_reg, -1, addr_reg, oi);
     tcg_out_qemu_st_direct(s, get_memop(oi), data_reg, h);
 
     if (ldst) {
@@ -1853,6 +1964,9 @@ static void tcg_out_qemu_ldst_i128(TCGContext *s, TCGReg datalo, TCGReg datahi,
     bool use_pair;
 
     ldst = prepare_host_addr(s, &h, addr_reg, oi, is_ld);
+    if (!is_ld) {
+        tcg_out_fastpath_store_log(s, &h, datalo, datahi, addr_reg, oi);
+    }
 
     /* Compose the final address, as LDP/STP have no indexing. */
     if (h.index == TCG_REG_XZR) {

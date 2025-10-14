@@ -18,7 +18,7 @@
 #include "qapi/qapi-commands-misc.h"
 #include <errno.h>
 
-#define MMU_LOG_FILE_PATH "../vm/mmu.log"
+#define MMU_LOG_FILE_PATH "/Users/jueun/BoB/vm/mmu.log"
 
 static bool mmu_open_log_file(Error **errp)
 {
