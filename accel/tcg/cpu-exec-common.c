@@ -29,6 +29,50 @@ bool mmu_fast_log_enabled = false;
 bool mmu_slow_log_enabled = false;
 bool mmu_log_to_file = false;
 FILE *mmu_log_file = NULL;
+static bool mmu_log_filter_state = false;
+static uint64_t mmu_log_filter_start = 0;
+static uint64_t mmu_log_filter_end = UINT64_MAX;
+
+bool mmu_log_vaddr_allowed(uint64_t vaddr)
+{
+    if (!mmu_log_filter_state) {
+        return true;
+    }
+    return vaddr >= mmu_log_filter_start && vaddr <= mmu_log_filter_end;
+}
+
+void mmu_log_filter_enable(uint64_t start, uint64_t end)
+{
+    if (start <= end) {
+        mmu_log_filter_start = start;
+        mmu_log_filter_end = end;
+    } else {
+        mmu_log_filter_start = end;
+        mmu_log_filter_end = start;
+    }
+    mmu_log_filter_state = true;
+}
+
+void mmu_log_filter_disable(void)
+{
+    mmu_log_filter_state = false;
+    mmu_log_filter_start = 0;
+    mmu_log_filter_end = UINT64_MAX;
+}
+
+bool mmu_log_filter_current(uint64_t *start, uint64_t *end)
+{
+    if (!mmu_log_filter_state) {
+        return false;
+    }
+    if (start) {
+        *start = mmu_log_filter_start;
+    }
+    if (end) {
+        *end = mmu_log_filter_end;
+    }
+    return true;
+}
 
 bool tcg_cflags_has(CPUState *cpu, uint32_t flags)
 {

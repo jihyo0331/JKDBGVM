@@ -611,14 +611,33 @@
 { 'command': 'vcpu-set-throttle', 
   'data': { 'cpu': 'int', 'percent': 'int', 'period-ms': 'int' } }
 
-  ##
+##
+# @MMULogVirtualRange:
+#
+# Optional virtual address range filter for MMU write logging commands.
+#
+# @start: Inclusive starting virtual address as a string accepted by
+#         qemu_strtou64() (for example "0xfffff7aac0000000").
+# @end:   Inclusive ending virtual address as a string accepted by
+#         qemu_strtou64().
+#
+# Since: 9.1
+##
+{ 'struct': 'MMULogVirtualRange',
+  'data': { 'start': 'str', 'end': 'str' } }
+
+##
 # @sfmmu:
 #
 # Enable fast-path MMU write logging.
 #
+# @virtual-range: (optional) When provided, only writes whose virtual address
+#                 is within the inclusive range are logged.
+#
 # Since: 9.1
 ##
-{ 'command': 'sfmmu' }
+{ 'command': 'sfmmu',
+  'data': { '*virtual-range': 'MMULogVirtualRange' } }
 
 ##
 # @qfmmu:
@@ -634,9 +653,13 @@
 #
 # Enable slow-path MMU write logging.
 #
+# @virtual-range: (optional) When provided, only writes whose virtual address
+#                 is within the inclusive range are logged.
+#
 # Since: 9.1
 ##
-{ 'command': 'ssmmu' }
+{ 'command': 'ssmmu',
+  'data': { '*virtual-range': 'MMULogVirtualRange' } }
 
 ##
 # @qsmmu:
@@ -653,18 +676,26 @@
 # Enable logging of both fast-path and slow-path MMU writes to a log file
 # located at ../vm/mmu.log (relative to the QEMU working directory).
 #
+# @virtual-range: (optional) When provided, only writes whose virtual address
+#                 is within the inclusive range are logged.
+#
 # Since: 9.1
 ##
-{ 'command': 'wmmu' }
+{ 'command': 'wmmu',
+  'data': { '*virtual-range': 'MMULogVirtualRange' } }
 
 ##
 # @smmu:
 #
 # Enable both fast-path and slow-path MMU write logging (legacy alias).
 #
+# @virtual-range: (optional) When provided, only writes whose virtual address
+#                 is within the inclusive range are logged.
+#
 # Since: 9.1
 ##
-{ 'command': 'smmu' }
+{ 'command': 'smmu',
+  'data': { '*virtual-range': 'MMULogVirtualRange' } }
 
 ##
 # @qmmu:

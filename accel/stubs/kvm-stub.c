@@ -13,6 +13,7 @@
 #include "qemu/osdep.h"
 #include "system/kvm.h"
 #include "hw/pci/msi.h"
+#include "system/kvm-throttle.h"
 
 KVMState *kvm_state;
 bool kvm_kernel_irqchip;
@@ -124,4 +125,11 @@ bool kvm_hwpoisoned_mem(void)
 int kvm_create_guest_memfd(uint64_t size, uint64_t flags, Error **errp)
 {
     return -ENOSYS;
+}
+
+void kvm_thr_set_all(int cpu_index, int percent, int period_ms)
+{
+    (void)cpu_index;
+    (void)percent;
+    (void)period_ms;
 }

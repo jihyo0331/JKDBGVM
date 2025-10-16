@@ -59,7 +59,12 @@ static const char *irq_classification(IRQState *irq)
 static int irq_log_enabled;
 
 #if defined(__GNUC__)
-#pragma weak lookup_symbol
+__attribute__((weak))
+const char *lookup_symbol(uint64_t orig_addr)
+{
+    (void)orig_addr;
+    return "";
+}
 #endif
 
 #define IRQ_LOG_RING_SIZE 1024

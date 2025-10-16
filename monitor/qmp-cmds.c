@@ -22,6 +22,7 @@
 #include "monitor/qmp-helpers.h"
 #include "system/system.h"
 #include "system/kvm.h"
+#include "system/kvm-throttle.h"
 #include "system/runstate.h"
 #include "system/runstate-action.h"
 #include "system/block-backend.h"
@@ -34,7 +35,6 @@
 #include "hw/mem/memory-device.h"
 #include "hw/intc/intc.h"
 #include "migration/misc.h"
-#include "system/kvm-throttle.h"
 #include "system/cpus.h"
 
 NameInfo *qmp_query_name(Error **errp)
@@ -67,14 +67,19 @@ void qmp_stop(Error **errp)
     }
 }
 
-void qmp_vcpu_set_throttle(int64_t cpu, int64_t percent, int64_t period_ms, Error **errp)
+void qmp_vcpu_set_throttle(int64_t cpu, int64_t percent, int64_t period_ms,
+                           Error **errp)
 {
-        if (percent < 0 || percent > 100) {
+    if (percent < 0 || percent > 100) {
         error_setg(errp, "percent must be 0..100");
         return;
     }
     if (period_ms < 1 || period_ms > 1000) {
         error_setg(errp, "period-ms must be 1..1000");
+        return;
+    }
+    if (!kvm_enabled()) {
+        error_setg(errp, "KVM accelerator is not enabled");
         return;
     }
     /* -1이면 모든 vCPU에 적용 */

@@ -170,6 +170,9 @@ void HELPER(log_store_fastpath)(CPUArchState *env, uint64_t addr,
     if (!mmu_fast_log_enabled) {
         return;
     }
+    if (!mmu_log_vaddr_allowed(addr)) {
+        return;
+    }
 
     CPUState *cpu = env_cpu(env);
     MemOp memop = get_memop(oi);

@@ -146,5 +146,9 @@ extern bool mmu_fast_log_enabled;
 extern bool mmu_slow_log_enabled;
 extern bool mmu_log_to_file;
 extern FILE *mmu_log_file;
+bool mmu_log_vaddr_allowed(uint64_t vaddr);
+void mmu_log_filter_enable(uint64_t start, uint64_t end);
+void mmu_log_filter_disable(void);
+bool mmu_log_filter_current(uint64_t *start, uint64_t *end);
 
 #endif /* ACCEL_TCG_INTERNAL_COMMON_H */

@@ -16,9 +16,73 @@
 #include "internal-common.h"
 #include "exec/log.h"
 #include "qapi/qapi-commands-misc.h"
+#include "qemu/cutils.h"
 #include <errno.h>
 
 #define MMU_LOG_FILE_PATH "/Users/jueun/BoB/vm/mmu.log"
+
+typedef struct MMULogFilterRequest {
+    bool specified;
+    uint64_t start;
+    uint64_t end;
+} MMULogFilterRequest;
+
+static bool mmu_parse_virtual_range(const MMULogVirtualRange *virtual_range,
+                                    MMULogFilterRequest *req,
+                                    Error **errp)
+{
+    ERRP_GUARD();
+
+    if (!virtual_range) {
+        req->specified = false;
+        req->start = 0;
+        req->end = UINT64_MAX;
+        return true;
+    }
+
+    uint64_t start, end;
+
+    if (qemu_strtou64(virtual_range->start, NULL, 0, &start) < 0) {
+        error_setg(errp, "Invalid virtual range start '%s'",
+                   virtual_range->start);
+        return false;
+    }
+    if (qemu_strtou64(virtual_range->end, NULL, 0, &end) < 0) {
+        error_setg(errp, "Invalid virtual range end '%s'",
+                   virtual_range->end);
+        return false;
+    }
+
+    if (start <= end) {
+        req->start = start;
+        req->end = end;
+    } else {
+        req->start = end;
+        req->end = start;
+    }
+    req->specified = true;
+    return true;
+}
+
+static void mmu_apply_filter_request(const MMULogFilterRequest *req)
+{
+    if (req->specified) {
+        mmu_log_filter_enable(req->start, req->end);
+    } else {
+        mmu_log_filter_disable();
+    }
+}
+
+static void mmu_log_enabled_message(const char *message,
+                                    const MMULogFilterRequest *req)
+{
+    if (req->specified) {
+        qemu_log("%s (virtual range 0x%016" PRIx64 " - 0x%016" PRIx64 ").\n",
+                 message, req->start, req->end);
+    } else {
+        qemu_log("%s.\n", message);
+    }
+}
 
 static bool mmu_open_log_file(Error **errp)
 {
@@ -45,10 +109,17 @@ static void mmu_close_log_file(void)
     mmu_log_to_file = false;
 }
 
-void qmp_sfmmu(Error **errp)
+void qmp_sfmmu(MMULogVirtualRange *virtual_range, Error **errp)
 {
+    MMULogFilterRequest filter = { 0 };
+
+    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+        return;
+    }
+
+    mmu_apply_filter_request(&filter);
     mmu_fast_log_enabled = true;
-    qemu_log("Fast path MMU write logging enabled.\n");
+    mmu_log_enabled_message("Fast path MMU write logging enabled", &filter);
 }
 
 void qmp_qfmmu(Error **errp)
@@ -60,10 +131,17 @@ void qmp_qfmmu(Error **errp)
     }
 }
 
-void qmp_ssmmu(Error **errp)
+void qmp_ssmmu(MMULogVirtualRange *virtual_range, Error **errp)
 {
+    MMULogFilterRequest filter = { 0 };
+
+    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+        return;
+    }
+
+    mmu_apply_filter_request(&filter);
     mmu_slow_log_enabled = true;
-    qemu_log("Slow path MMU write logging enabled.\n");
+    mmu_log_enabled_message("Slow path MMU write logging enabled", &filter);
 }
 
 void qmp_qsmmu(Error **errp)
@@ -75,28 +153,44 @@ void qmp_qsmmu(Error **errp)
     }
 }
 
-void qmp_wmmu(Error **errp)
+void qmp_wmmu(MMULogVirtualRange *virtual_range, Error **errp)
 {
+    MMULogFilterRequest filter = { 0 };
+
+    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+        return;
+    }
+
     if (!mmu_open_log_file(errp)) {
         return;
     }
 
+    mmu_apply_filter_request(&filter);
     mmu_fast_log_enabled = true;
     mmu_slow_log_enabled = true;
-    qemu_log("MMU write logging enabled (file and console).\n");
+    mmu_log_enabled_message(
+        "MMU write logging enabled (file and console)", &filter);
 }
 
-void qmp_smmu(Error **errp)
+void qmp_smmu(MMULogVirtualRange *virtual_range, Error **errp)
 {
+    MMULogFilterRequest filter = { 0 };
+
+    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+        return;
+    }
+
+    mmu_apply_filter_request(&filter);
     mmu_fast_log_enabled = true;
     mmu_slow_log_enabled = true;
-    qemu_log("MMU write logging enabled.\n");
+    mmu_log_enabled_message("MMU write logging enabled", &filter);
 }
 
 void qmp_qmmu(Error **errp)
 {
     mmu_fast_log_enabled = false;
     mmu_slow_log_enabled = false;
+    mmu_log_filter_disable();
     mmu_close_log_file();
     qemu_log("MMU write logging disabled.\n");
 }

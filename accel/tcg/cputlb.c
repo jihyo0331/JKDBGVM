@@ -2671,10 +2671,12 @@ static void do_st_1(CPUState *cpu, MMULookupPageData *p, uint8_t val,
                     int mmu_idx, uintptr_t ra)
 {
     hwaddr paddr = 0;
+    bool should_log = mmu_slow_log_enabled &&
+                      mmu_log_vaddr_allowed(p->addr);
 
     if (unlikely(p->flags & TLB_MMIO)) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x (MMIO)\n",
                    (unsigned long)p->addr, (unsigned long)paddr, val);
             if (mmu_log_to_file && mmu_log_file) {
@@ -2689,7 +2691,7 @@ static void do_st_1(CPUState *cpu, MMULookupPageData *p, uint8_t val,
         /* nothing */
     } else {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x\n",
                    (unsigned long)p->addr, (unsigned long)paddr, val);
             if (mmu_log_to_file && mmu_log_file) {
@@ -2708,10 +2710,12 @@ static void do_st_2(CPUState *cpu, MMULookupPageData *p, uint16_t val,
 {
     hwaddr paddr = 0;
     uint16_t orig_val = val;
+    bool should_log = mmu_slow_log_enabled &&
+                      mmu_log_vaddr_allowed(p->addr);
 
     if (unlikely(p->flags & TLB_MMIO)) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x (MMIO)\n",
                    (unsigned long)p->addr, (unsigned long)paddr, orig_val);
             if (mmu_log_to_file && mmu_log_file) {
@@ -2729,7 +2733,7 @@ static void do_st_2(CPUState *cpu, MMULookupPageData *p, uint16_t val,
         /* nothing */
     } else {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x\n",
                    (unsigned long)p->addr, (unsigned long)paddr, orig_val);
             if (mmu_log_to_file && mmu_log_file) {
@@ -2752,10 +2756,12 @@ static void do_st_4(CPUState *cpu, MMULookupPageData *p, uint32_t val,
 {
     hwaddr paddr = 0;
     uint32_t orig_val = val;
+    bool should_log = mmu_slow_log_enabled &&
+                      mmu_log_vaddr_allowed(p->addr);
 
     if (unlikely(p->flags & TLB_MMIO)) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x (MMIO)\n",
                    (unsigned long)p->addr, (unsigned long)paddr, orig_val);
             if (mmu_log_to_file && mmu_log_file) {
@@ -2773,7 +2779,7 @@ static void do_st_4(CPUState *cpu, MMULookupPageData *p, uint32_t val,
         /* nothing */
     } else {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x\n",
                    (unsigned long)p->addr, (unsigned long)paddr, orig_val);
             if (mmu_log_to_file && mmu_log_file) {
@@ -2796,16 +2802,20 @@ static void do_st_8(CPUState *cpu, MMULookupPageData *p, uint64_t val,
 {
     hwaddr paddr = 0;
     uint64_t orig_val = val;
+    bool should_log = mmu_slow_log_enabled &&
+                      mmu_log_vaddr_allowed(p->addr);
 
     if (unlikely(p->flags & TLB_MMIO)) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx (MMIO)\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+                   (unsigned long)p->addr, (unsigned long)paddr,
+                   (unsigned long)orig_val);
             if (mmu_log_to_file && mmu_log_file) {
                 fprintf(mmu_log_file,
                         "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx (MMIO)\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+                        (unsigned long)p->addr, (unsigned long)paddr,
+                        (unsigned long)orig_val);
                 fflush(mmu_log_file);
             }
         }
@@ -2817,13 +2827,15 @@ static void do_st_8(CPUState *cpu, MMULookupPageData *p, uint64_t val,
         /* nothing */
     } else {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (mmu_slow_log_enabled) {
+        if (should_log) {
             printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+                   (unsigned long)p->addr, (unsigned long)paddr,
+                   (unsigned long)orig_val);
             if (mmu_log_to_file && mmu_log_file) {
                 fprintf(mmu_log_file,
                         "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, orig_val);
+                        (unsigned long)p->addr, (unsigned long)paddr,
+                        (unsigned long)orig_val);
                 fflush(mmu_log_file);
             }
         }
@@ -2926,9 +2938,11 @@ static void do_st16_mmu(CPUState *cpu, vaddr addr, Int128 val,
     cpu_req_mo(cpu, TCG_MO_LD_ST | TCG_MO_ST_ST);
     crosspage = mmu_lookup(cpu, addr, oi, ra, MMU_DATA_STORE, &l);
     if (likely(!crosspage)) {
+        bool should_log = mmu_slow_log_enabled &&
+                          mmu_log_vaddr_allowed(addr);
         if (unlikely(l.page[0].flags & TLB_MMIO)) {
             hwaddr paddr = l.page[0].full->xlat_section + (addr & ~TARGET_PAGE_MASK);
-            if (mmu_slow_log_enabled) {
+            if (should_log) {
                 printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx (MMIO)\n",
                        (unsigned long)addr, (unsigned long)paddr,
                        (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
@@ -2948,7 +2962,7 @@ static void do_st16_mmu(CPUState *cpu, vaddr addr, Int128 val,
             /* nothing */
         } else {
             hwaddr paddr = l.page[0].full->xlat_section + (addr & ~TARGET_PAGE_MASK);
-            if (mmu_slow_log_enabled) {
+            if (should_log) {
                 printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx\n",
                        (unsigned long)addr, (unsigned long)paddr,
                        (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
