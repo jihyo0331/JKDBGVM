@@ -2671,36 +2671,42 @@ static void do_st_1(CPUState *cpu, MMULookupPageData *p, uint8_t val,
                     int mmu_idx, uintptr_t ra)
 {
     hwaddr paddr = 0;
+    const uint8_t size = UINT8_C(1);
+    const int width = size * 2;
+    const uint64_t data_mask = UINT64_C(0xFF);
+    const uint64_t data = val;
+    const bool is_mmio = (p->flags & TLB_MMIO) != 0;
+    const bool discard = (p->flags & TLB_DISCARD_WRITE) != 0;
+    const bool slowpath = true;
+    const char *mmio_str = is_mmio ? "true" : "false";
+    const char *slowpath_str = slowpath ? "true" : "false";
     bool should_log = mmu_slow_log_enabled &&
                       mmu_log_vaddr_allowed(p->addr);
 
-    if (unlikely(p->flags & TLB_MMIO)) {
+    if (!discard) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x (MMIO)\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x (MMIO)\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, val);
-                fflush(mmu_log_file);
-            }
+    }
+
+    if (should_log && !discard) {
+        printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+               " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+               (unsigned long)p->addr, (unsigned long)paddr, size,
+               width, data & data_mask, mmio_str, slowpath_str);
+        if (mmu_log_to_file && mmu_log_file) {
+            fprintf(mmu_log_file,
+                    "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+                    " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+                    (unsigned long)p->addr, (unsigned long)paddr, size,
+                    width, data & data_mask, mmio_str, slowpath_str);
+            fflush(mmu_log_file);
         }
-        do_st_mmio_leN(cpu, p->full, val, p->addr, 1, mmu_idx, ra);
-    } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
+    }
+
+    if (unlikely(is_mmio)) {
+        do_st_mmio_leN(cpu, p->full, val, p->addr, size, mmu_idx, ra);
+    } else if (unlikely(discard)) {
         /* nothing */
     } else {
-        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=1 data=0x%02x\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, val);
-                fflush(mmu_log_file);
-            }
-        }
         *(uint8_t *)p->haddr = val;
     }
 }
@@ -2709,40 +2715,46 @@ static void do_st_2(CPUState *cpu, MMULookupPageData *p, uint16_t val,
                     int mmu_idx, MemOp memop, uintptr_t ra)
 {
     hwaddr paddr = 0;
+    const uint8_t size = UINT8_C(2);
+    const int width = size * 2;
+    const uint64_t data_mask = UINT64_C(0xFFFF);
+    const bool is_mmio = (p->flags & TLB_MMIO) != 0;
+    const bool discard = (p->flags & TLB_DISCARD_WRITE) != 0;
+    const bool slowpath = true;
+    const char *mmio_str = is_mmio ? "true" : "false";
+    const char *slowpath_str = slowpath ? "true" : "false";
     uint16_t orig_val = val;
     bool should_log = mmu_slow_log_enabled &&
                       mmu_log_vaddr_allowed(p->addr);
 
-    if (unlikely(p->flags & TLB_MMIO)) {
+    if (!discard) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x (MMIO)\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x (MMIO)\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-                fflush(mmu_log_file);
-            }
+    }
+
+    if (should_log && !discard) {
+        printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+               " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+               (unsigned long)p->addr, (unsigned long)paddr, size,
+               width, (uint64_t)orig_val & data_mask, mmio_str, slowpath_str);
+        if (mmu_log_to_file && mmu_log_file) {
+            fprintf(mmu_log_file,
+                    "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+                    " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+                    (unsigned long)p->addr, (unsigned long)paddr, size,
+                    width, (uint64_t)orig_val & data_mask, mmio_str,
+                    slowpath_str);
+            fflush(mmu_log_file);
         }
+    }
+
+    if (unlikely(is_mmio)) {
         if ((memop & MO_BSWAP) != MO_LE) {
             val = bswap16(val);
         }
-        do_st_mmio_leN(cpu, p->full, val, p->addr, 2, mmu_idx, ra);
-    } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
+        do_st_mmio_leN(cpu, p->full, val, p->addr, size, mmu_idx, ra);
+    } else if (unlikely(discard)) {
         /* nothing */
     } else {
-        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=2 data=0x%04x\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-                fflush(mmu_log_file);
-            }
-        }
         /* Swap to host endian if necessary, then store. */
         if (memop & MO_BSWAP) {
             val = bswap16(val);
@@ -2755,40 +2767,46 @@ static void do_st_4(CPUState *cpu, MMULookupPageData *p, uint32_t val,
                     int mmu_idx, MemOp memop, uintptr_t ra)
 {
     hwaddr paddr = 0;
+    const uint8_t size = UINT8_C(4);
+    const int width = size * 2;
+    const uint64_t data_mask = UINT64_C(0xFFFFFFFF);
+    const bool is_mmio = (p->flags & TLB_MMIO) != 0;
+    const bool discard = (p->flags & TLB_DISCARD_WRITE) != 0;
+    const bool slowpath = true;
+    const char *mmio_str = is_mmio ? "true" : "false";
+    const char *slowpath_str = slowpath ? "true" : "false";
     uint32_t orig_val = val;
     bool should_log = mmu_slow_log_enabled &&
                       mmu_log_vaddr_allowed(p->addr);
 
-    if (unlikely(p->flags & TLB_MMIO)) {
+    if (!discard) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x (MMIO)\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x (MMIO)\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-                fflush(mmu_log_file);
-            }
+    }
+
+    if (should_log && !discard) {
+        printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+               " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+               (unsigned long)p->addr, (unsigned long)paddr, size,
+               width, (uint64_t)orig_val & data_mask, mmio_str, slowpath_str);
+        if (mmu_log_to_file && mmu_log_file) {
+            fprintf(mmu_log_file,
+                    "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+                    " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+                    (unsigned long)p->addr, (unsigned long)paddr, size,
+                    width, (uint64_t)orig_val & data_mask, mmio_str,
+                    slowpath_str);
+            fflush(mmu_log_file);
         }
+    }
+
+    if (unlikely(is_mmio)) {
         if ((memop & MO_BSWAP) != MO_LE) {
             val = bswap32(val);
         }
-        do_st_mmio_leN(cpu, p->full, val, p->addr, 4, mmu_idx, ra);
-    } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
+        do_st_mmio_leN(cpu, p->full, val, p->addr, size, mmu_idx, ra);
+    } else if (unlikely(discard)) {
         /* nothing */
     } else {
-        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x\n",
-                   (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=4 data=0x%08x\n",
-                        (unsigned long)p->addr, (unsigned long)paddr, orig_val);
-                fflush(mmu_log_file);
-            }
-        }
         /* Swap to host endian if necessary, then store. */
         if (memop & MO_BSWAP) {
             val = bswap32(val);
@@ -2801,44 +2819,45 @@ static void do_st_8(CPUState *cpu, MMULookupPageData *p, uint64_t val,
                     int mmu_idx, MemOp memop, uintptr_t ra)
 {
     hwaddr paddr = 0;
+    const uint8_t size = UINT8_C(8);
+    const int width = size * 2;
+    const uint64_t data_mask = UINT64_MAX;
+    const bool is_mmio = (p->flags & TLB_MMIO) != 0;
+    const bool discard = (p->flags & TLB_DISCARD_WRITE) != 0;
+    const bool slowpath = true;
+    const char *mmio_str = is_mmio ? "true" : "false";
+    const char *slowpath_str = slowpath ? "true" : "false";
     uint64_t orig_val = val;
     bool should_log = mmu_slow_log_enabled &&
                       mmu_log_vaddr_allowed(p->addr);
 
-    if (unlikely(p->flags & TLB_MMIO)) {
+    if (!discard) {
         paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx (MMIO)\n",
-                   (unsigned long)p->addr, (unsigned long)paddr,
-                   (unsigned long)orig_val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx (MMIO)\n",
-                        (unsigned long)p->addr, (unsigned long)paddr,
-                        (unsigned long)orig_val);
-                fflush(mmu_log_file);
-            }
+    }
+
+    if (should_log && !discard) {
+        printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+               " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+               (unsigned long)p->addr, (unsigned long)paddr, size,
+               width, orig_val & data_mask, mmio_str, slowpath_str);
+        if (mmu_log_to_file && mmu_log_file) {
+            fprintf(mmu_log_file,
+                    "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+                    " data=0x%0*" PRIx64 " mmio=%s slowpath=%s\n",
+                    (unsigned long)p->addr, (unsigned long)paddr, size,
+                    width, orig_val & data_mask, mmio_str, slowpath_str);
+            fflush(mmu_log_file);
         }
+    }
+
+    if (unlikely(is_mmio)) {
         if ((memop & MO_BSWAP) != MO_LE) {
             val = bswap64(val);
         }
-        do_st_mmio_leN(cpu, p->full, val, p->addr, 8, mmu_idx, ra);
-    } else if (unlikely(p->flags & TLB_DISCARD_WRITE)) {
+        do_st_mmio_leN(cpu, p->full, val, p->addr, size, mmu_idx, ra);
+    } else if (unlikely(discard)) {
         /* nothing */
     } else {
-        paddr = p->full->phys_addr + (p->addr & ~TARGET_PAGE_MASK);
-        if (should_log) {
-            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx\n",
-                   (unsigned long)p->addr, (unsigned long)paddr,
-                   (unsigned long)orig_val);
-            if (mmu_log_to_file && mmu_log_file) {
-                fprintf(mmu_log_file,
-                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=8 data=0x%016lx\n",
-                        (unsigned long)p->addr, (unsigned long)paddr,
-                        (unsigned long)orig_val);
-                fflush(mmu_log_file);
-            }
-        }
         /* Swap to host endian if necessary, then store. */
         if (memop & MO_BSWAP) {
             val = bswap64(val);
@@ -2938,42 +2957,45 @@ static void do_st16_mmu(CPUState *cpu, vaddr addr, Int128 val,
     cpu_req_mo(cpu, TCG_MO_LD_ST | TCG_MO_ST_ST);
     crosspage = mmu_lookup(cpu, addr, oi, ra, MMU_DATA_STORE, &l);
     if (likely(!crosspage)) {
+        const uint8_t size = UINT8_C(16);
+        uint64_t hi = int128_gethi(val);
+        uint64_t lo = int128_getlo(val);
+        const bool is_mmio = (l.page[0].flags & TLB_MMIO) != 0;
+        const bool discard = (l.page[0].flags & TLB_DISCARD_WRITE) != 0;
+        const bool slowpath = true;
+        const char *mmio_str = is_mmio ? "true" : "false";
+        const char *slowpath_str = slowpath ? "true" : "false";
         bool should_log = mmu_slow_log_enabled &&
                           mmu_log_vaddr_allowed(addr);
-        if (unlikely(l.page[0].flags & TLB_MMIO)) {
-            hwaddr paddr = l.page[0].full->xlat_section + (addr & ~TARGET_PAGE_MASK);
-            if (should_log) {
-                printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx (MMIO)\n",
-                       (unsigned long)addr, (unsigned long)paddr,
-                       (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
-                if (mmu_log_to_file && mmu_log_file) {
-                    fprintf(mmu_log_file,
-                            "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx (MMIO)\n",
-                            (unsigned long)addr, (unsigned long)paddr,
-                            (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
-                    fflush(mmu_log_file);
-                }
+        hwaddr paddr = 0;
+
+        if (!discard) {
+            paddr = l.page[0].full->xlat_section + (addr & ~TARGET_PAGE_MASK);
+        }
+
+        if (should_log && !discard) {
+            printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+                   " data=0x%016" PRIx64 "%016" PRIx64 " mmio=%s slowpath=%s\n",
+                   (unsigned long)addr, (unsigned long)paddr,
+                   size, hi, lo, mmio_str, slowpath_str);
+            if (mmu_log_to_file && mmu_log_file) {
+                fprintf(mmu_log_file,
+                        "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=%" PRIu8
+                        " data=0x%016" PRIx64 "%016" PRIx64 " mmio=%s slowpath=%s\n",
+                        (unsigned long)addr, (unsigned long)paddr,
+                        size, hi, lo, mmio_str, slowpath_str);
+                fflush(mmu_log_file);
             }
+        }
+
+        if (unlikely(is_mmio)) {
             if ((l.memop & MO_BSWAP) != MO_LE) {
                 val = bswap128(val);
             }
-            do_st16_mmio_leN(cpu, l.page[0].full, val, addr, 16, l.mmu_idx, ra);
-        } else if (unlikely(l.page[0].flags & TLB_DISCARD_WRITE)) {
+            do_st16_mmio_leN(cpu, l.page[0].full, val, addr, size, l.mmu_idx, ra);
+        } else if (unlikely(discard)) {
             /* nothing */
         } else {
-            hwaddr paddr = l.page[0].full->xlat_section + (addr & ~TARGET_PAGE_MASK);
-            if (should_log) {
-                printf("[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx\n",
-                       (unsigned long)addr, (unsigned long)paddr,
-                       (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
-                if (mmu_log_to_file && mmu_log_file) {
-                    fprintf(mmu_log_file,
-                            "[SLOW_MEMORY_WRITE] vaddr=0x%lx paddr=0x%lx size=16 data=0x%016lx%016lx\n",
-                            (unsigned long)addr, (unsigned long)paddr,
-                            (unsigned long)int128_gethi(val), (unsigned long)int128_getlo(val));
-                    fflush(mmu_log_file);
-                }
-            }
             /* Swap to host endian if necessary, then store. */
             if (l.memop & MO_BSWAP) {
                 val = bswap128(val);

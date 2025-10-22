@@ -177,7 +177,10 @@ void HELPER(log_store_fastpath)(CPUArchState *env, uint64_t addr,
     CPUState *cpu = env_cpu(env);
     MemOp memop = get_memop(oi);
     unsigned size_shift = memop & MO_SIZE;
-    unsigned size = (size_shift == MO_128) ? 16u : 1u << size_shift;
+    uint8_t size = (size_shift == MO_128) ? UINT8_C(16)
+                                          : (uint8_t)(1u << size_shift);
+    const bool slowpath = false;
+    const char *slowpath_str = slowpath ? "true" : "false";
     unsigned mmu_idx = get_mmuidx(oi);
     CPUTLBDescFast *fast = &cpu->neg.tlb.f[mmu_idx];
     uintptr_t index_mask = fast->mask >> CPU_TLB_ENTRY_BITS;
@@ -201,75 +204,87 @@ void HELPER(log_store_fastpath)(CPUArchState *env, uint64_t addr,
     switch (size) {
     case 1:
         printf("[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-               " paddr=0x%016" PRIx64 " size=1 data=0x%02" PRIx64 "\n",
-               addr, phys, value_lo & UINT8_MAX);
+               " paddr=0x%016" PRIx64 " size=%" PRIu8
+               " data=0x%02" PRIx64 " slowpath=%s\n",
+               addr, phys, size, value_lo & UINT8_MAX, slowpath_str);
         if (mmu_log_to_file && mmu_log_file) {
             fprintf(mmu_log_file,
                     "[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-                    " paddr=0x%016" PRIx64 " size=1 data=0x%02" PRIx64 "\n",
-                    addr, phys, value_lo & UINT8_MAX);
+                    " paddr=0x%016" PRIx64 " size=%" PRIu8
+                    " data=0x%02" PRIx64 " slowpath=%s\n",
+                    addr, phys, size, value_lo & UINT8_MAX, slowpath_str);
             fflush(mmu_log_file);
         }
         break;
     case 2:
         printf("[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-               " paddr=0x%016" PRIx64 " size=2 data=0x%04" PRIx64 "\n",
-               addr, phys, value_lo & UINT16_MAX);
+               " paddr=0x%016" PRIx64 " size=%" PRIu8
+               " data=0x%04" PRIx64 " slowpath=%s\n",
+               addr, phys, size, value_lo & UINT16_MAX, slowpath_str);
         if (mmu_log_to_file && mmu_log_file) {
             fprintf(mmu_log_file,
                     "[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-                    " paddr=0x%016" PRIx64 " size=2 data=0x%04" PRIx64 "\n",
-                    addr, phys, value_lo & UINT16_MAX);
+                    " paddr=0x%016" PRIx64 " size=%" PRIu8
+                    " data=0x%04" PRIx64 " slowpath=%s\n",
+                    addr, phys, size, value_lo & UINT16_MAX, slowpath_str);
             fflush(mmu_log_file);
         }
         break;
     case 4:
         printf("[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-               " paddr=0x%016" PRIx64 " size=4 data=0x%08" PRIx64 "\n",
-               addr, phys, value_lo & UINT32_MAX);
+               " paddr=0x%016" PRIx64 " size=%" PRIu8
+               " data=0x%08" PRIx64 " slowpath=%s\n",
+               addr, phys, size, value_lo & UINT32_MAX, slowpath_str);
         if (mmu_log_to_file && mmu_log_file) {
             fprintf(mmu_log_file,
                     "[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-                    " paddr=0x%016" PRIx64 " size=4 data=0x%08" PRIx64 "\n",
-                    addr, phys, value_lo & UINT32_MAX);
+                    " paddr=0x%016" PRIx64 " size=%" PRIu8
+                    " data=0x%08" PRIx64 " slowpath=%s\n",
+                    addr, phys, size, value_lo & UINT32_MAX, slowpath_str);
             fflush(mmu_log_file);
         }
         break;
     case 8:
         printf("[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-               " paddr=0x%016" PRIx64 " size=8 data=0x%016" PRIx64 "\n",
-               addr, phys, value_lo);
+               " paddr=0x%016" PRIx64 " size=%" PRIu8
+               " data=0x%016" PRIx64 " slowpath=%s\n",
+               addr, phys, size, value_lo, slowpath_str);
         if (mmu_log_to_file && mmu_log_file) {
             fprintf(mmu_log_file,
                     "[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-                    " paddr=0x%016" PRIx64 " size=8 data=0x%016" PRIx64 "\n",
-                    addr, phys, value_lo);
+                    " paddr=0x%016" PRIx64 " size=%" PRIu8
+                    " data=0x%016" PRIx64 " slowpath=%s\n",
+                    addr, phys, size, value_lo, slowpath_str);
             fflush(mmu_log_file);
         }
         break;
     case 16:
         printf("[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-               " paddr=0x%016" PRIx64 " size=16 data=0x%016" PRIx64
-               "%016" PRIx64 "\n",
-               addr, phys, value_hi, value_lo);
+               " paddr=0x%016" PRIx64 " size=%" PRIu8
+               " data=0x%016" PRIx64
+               "%016" PRIx64 " slowpath=%s\n",
+               addr, phys, size, value_hi, value_lo, slowpath_str);
         if (mmu_log_to_file && mmu_log_file) {
             fprintf(mmu_log_file,
                     "[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-                    " paddr=0x%016" PRIx64 " size=16 data=0x%016" PRIx64
-                    "%016" PRIx64 "\n",
-                    addr, phys, value_hi, value_lo);
+                    " paddr=0x%016" PRIx64 " size=%" PRIu8
+                    " data=0x%016" PRIx64
+                    "%016" PRIx64 " slowpath=%s\n",
+                    addr, phys, size, value_hi, value_lo, slowpath_str);
             fflush(mmu_log_file);
         }
         break;
     default:
         printf("[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-               " paddr=0x%016" PRIx64 " size=%u data=0x%016" PRIx64 "\n",
-               addr, phys, size, value_lo);
+               " paddr=0x%016" PRIx64 " size=%" PRIu8
+               " data=0x%016" PRIx64 " slowpath=%s\n",
+               addr, phys, size, value_lo, slowpath_str);
         if (mmu_log_to_file && mmu_log_file) {
             fprintf(mmu_log_file,
                     "[FAST_MEMORY_WRITE] vaddr=0x%016" PRIx64
-                    " paddr=0x%016" PRIx64 " size=%u data=0x%016" PRIx64 "\n",
-                    addr, phys, size, value_lo);
+                    " paddr=0x%016" PRIx64 " size=%" PRIu8
+                    " data=0x%016" PRIx64 " slowpath=%s\n",
+                    addr, phys, size, value_lo, slowpath_str);
             fflush(mmu_log_file);
         }
         break;

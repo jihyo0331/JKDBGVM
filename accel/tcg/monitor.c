@@ -15,6 +15,7 @@
 #include "tcg/tcg.h"
 #include "internal-common.h"
 #include "exec/log.h"
+#include "exec/target_page.h"
 #include "qapi/qapi-commands-misc.h"
 #include "qemu/cutils.h"
 #include <errno.h>
@@ -28,15 +29,79 @@ typedef struct MMULogFilterRequest {
 } MMULogFilterRequest;
 
 static bool mmu_parse_virtual_range(const MMULogVirtualRange *virtual_range,
+                                    const MMULogVirtualPageRange *virtual_page_range,
                                     MMULogFilterRequest *req,
                                     Error **errp)
 {
     ERRP_GUARD();
 
-    if (!virtual_range) {
+    if (virtual_range && virtual_page_range) {
+        error_setg(errp,
+                   "virtual-range and virtual-page-range cannot be used together");
+        return false;
+    }
+
+    if (!virtual_range && !virtual_page_range) {
         req->specified = false;
         req->start = 0;
         req->end = UINT64_MAX;
+        return true;
+    }
+
+    if (virtual_page_range) {
+        uint64_t page_start, page_end;
+        uint64_t lo, hi;
+        size_t page_size = qemu_target_page_size();
+
+        if (page_size == 0) {
+            error_setg(errp, "Target page size is not available");
+            return false;
+        }
+
+        if (qemu_strtou64(virtual_page_range->start, NULL, 0, &page_start) < 0) {
+            error_setg(errp, "Invalid virtual page range start '%s'",
+                       virtual_page_range->start);
+            return false;
+        }
+        if (qemu_strtou64(virtual_page_range->end, NULL, 0, &page_end) < 0) {
+            error_setg(errp, "Invalid virtual page range end '%s'",
+                       virtual_page_range->end);
+            return false;
+        }
+
+        if (page_start <= page_end) {
+            lo = page_start;
+            hi = page_end;
+        } else {
+            lo = page_end;
+            hi = page_start;
+        }
+
+        if (lo > UINT64_MAX / page_size) {
+            error_setg(errp, "Virtual page range start '%s' is too large",
+                       virtual_page_range->start);
+            return false;
+        }
+        if (hi > UINT64_MAX / page_size) {
+            error_setg(errp, "Virtual page range end '%s' is too large",
+                       virtual_page_range->end);
+            return false;
+        }
+
+        uint64_t start = lo * page_size;
+        uint64_t end_base = hi * page_size;
+        uint64_t end;
+
+        if (end_base > UINT64_MAX - (page_size - 1)) {
+            error_setg(errp, "Virtual page range end '%s' exceeds address space",
+                       virtual_page_range->end);
+            return false;
+        }
+        end = end_base + (page_size - 1);
+
+        req->start = start;
+        req->end = end;
+        req->specified = true;
         return true;
     }
 
@@ -109,11 +174,14 @@ static void mmu_close_log_file(void)
     mmu_log_to_file = false;
 }
 
-void qmp_sfmmu(MMULogVirtualRange *virtual_range, Error **errp)
+void qmp_sfmmu(MMULogVirtualRange *virtual_range,
+               MMULogVirtualPageRange *virtual_page_range,
+               Error **errp)
 {
     MMULogFilterRequest filter = { 0 };
 
-    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+    if (!mmu_parse_virtual_range(virtual_range, virtual_page_range,
+                                 &filter, errp)) {
         return;
     }
 
@@ -131,11 +199,14 @@ void qmp_qfmmu(Error **errp)
     }
 }
 
-void qmp_ssmmu(MMULogVirtualRange *virtual_range, Error **errp)
+void qmp_ssmmu(MMULogVirtualRange *virtual_range,
+               MMULogVirtualPageRange *virtual_page_range,
+               Error **errp)
 {
     MMULogFilterRequest filter = { 0 };
 
-    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+    if (!mmu_parse_virtual_range(virtual_range, virtual_page_range,
+                                 &filter, errp)) {
         return;
     }
 
@@ -153,11 +224,14 @@ void qmp_qsmmu(Error **errp)
     }
 }
 
-void qmp_wmmu(MMULogVirtualRange *virtual_range, Error **errp)
+void qmp_wmmu(MMULogVirtualRange *virtual_range,
+              MMULogVirtualPageRange *virtual_page_range,
+              Error **errp)
 {
     MMULogFilterRequest filter = { 0 };
 
-    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+    if (!mmu_parse_virtual_range(virtual_range, virtual_page_range,
+                                 &filter, errp)) {
         return;
     }
 
@@ -172,11 +246,14 @@ void qmp_wmmu(MMULogVirtualRange *virtual_range, Error **errp)
         "MMU write logging enabled (file and console)", &filter);
 }
 
-void qmp_smmu(MMULogVirtualRange *virtual_range, Error **errp)
+void qmp_smmu(MMULogVirtualRange *virtual_range,
+              MMULogVirtualPageRange *virtual_page_range,
+              Error **errp)
 {
     MMULogFilterRequest filter = { 0 };
 
-    if (!mmu_parse_virtual_range(virtual_range, &filter, errp)) {
+    if (!mmu_parse_virtual_range(virtual_range, virtual_page_range,
+                                 &filter, errp)) {
         return;
     }
 

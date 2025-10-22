@@ -68,6 +68,39 @@
 { 'command': 'query-name', 'returns': 'NameInfo', 'allow-preconfig': true }
 
 ##
+# @query-memory-map:
+#
+# Return a textual dump of the system memory layout, equivalent to
+# the HMP ``info mtree`` command.
+#
+# @flatview: render flatview information instead of region hierarchy.
+#     (default: false)
+#
+# @dispatch-tree: include the dispatch tree in the output.
+#     Ignored unless @flatview is true. (default: false)
+#
+# @owner: include owner information in the output. (default: false)
+#
+# @disabled: include disabled regions in the output. (default: false)
+#
+# Returns: memory layout formatted as a human readable text block.
+#
+# Since: 10.1
+#
+# .. qmp-example::
+#
+#     -> { "execute": "query-memory-map",
+#          "arguments": { "flatview": false, "owner": true } }
+#     <- { "return": { "human-readable-text": "address-space: memory\n..." } }
+##
+{ 'command': 'query-memory-map',
+  'data': { '*flatview': 'bool',
+            '*dispatch-tree': 'bool',
+            '*owner': 'bool',
+            '*disabled': 'bool' },
+  'returns': 'HumanReadableText' }
+
+##
 # @IOThreadInfo:
 #
 # Information about an iothread
@@ -627,6 +660,21 @@
   'data': { 'start': 'str', 'end': 'str' } }
 
 ##
+# @MMULogVirtualPageRange:
+#
+# Optional virtual page range filter for MMU write logging commands.
+#
+# @start: Inclusive starting virtual page number as a string accepted by
+#         qemu_strtou64() (for example "0xfffff7aac00").
+# @end:   Inclusive ending virtual page number as a string accepted by
+#         qemu_strtou64().
+#
+# Since: 9.1
+##
+{ 'struct': 'MMULogVirtualPageRange',
+  'data': { 'start': 'str', 'end': 'str' } }
+
+##
 # @sfmmu:
 #
 # Enable fast-path MMU write logging.
@@ -637,7 +685,8 @@
 # Since: 9.1
 ##
 { 'command': 'sfmmu',
-  'data': { '*virtual-range': 'MMULogVirtualRange' } }
+  'data': { '*virtual-range': 'MMULogVirtualRange',
+            '*virtual-page-range': 'MMULogVirtualPageRange' } }
 
 ##
 # @qfmmu:
@@ -659,7 +708,8 @@
 # Since: 9.1
 ##
 { 'command': 'ssmmu',
-  'data': { '*virtual-range': 'MMULogVirtualRange' } }
+  'data': { '*virtual-range': 'MMULogVirtualRange',
+            '*virtual-page-range': 'MMULogVirtualPageRange' } }
 
 ##
 # @qsmmu:
@@ -682,7 +732,8 @@
 # Since: 9.1
 ##
 { 'command': 'wmmu',
-  'data': { '*virtual-range': 'MMULogVirtualRange' } }
+  'data': { '*virtual-range': 'MMULogVirtualRange',
+            '*virtual-page-range': 'MMULogVirtualPageRange' } }
 
 ##
 # @smmu:
@@ -695,7 +746,8 @@
 # Since: 9.1
 ##
 { 'command': 'smmu',
-  'data': { '*virtual-range': 'MMULogVirtualRange' } }
+  'data': { '*virtual-range': 'MMULogVirtualRange',
+            '*virtual-page-range': 'MMULogVirtualPageRange' } }
 
 ##
 # @qmmu:

@@ -62,4 +62,7 @@ void monitor_register_hmp_info_hrt(const char *name,
 int error_vprintf_unless_qmp(const char *fmt, va_list ap) G_GNUC_PRINTF(1, 0);
 int error_printf_unless_qmp(const char *fmt, ...) G_GNUC_PRINTF(1, 2);
 
+char *qmp_human_monitor_command(const char *command_line, bool has_cpu_index,
+                                int64_t cpu_index, Error **errp);
+
 #endif /* MONITOR_H */

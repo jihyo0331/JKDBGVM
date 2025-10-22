@@ -34,6 +34,9 @@
 #include "hw/boards.h"
 #include "migration/vmstate.h"
 #include "system/address-spaces.h"
+#include "monitor/monitor.h"
+#include "qapi/type-helpers.h"
+#include "qapi/qapi-commands-misc.h"
 
 #include "memory-internal.h"
 
@@ -3706,6 +3709,162 @@ void mtree_info(bool flatview, bool dispatch_tree, bool owner, bool disabled)
     } else {
         mtree_info_as(dispatch_tree, owner, disabled);
     }
+}
+
+typedef struct MemoryMapLine {
+    int level;
+    char *text;
+} MemoryMapLine;
+
+static void memory_map_line_free(MemoryMapLine *line)
+{
+    if (!line) {
+        return;
+    }
+    g_free(line->text);
+    g_free(line);
+}
+
+static void memory_map_flush_section(GString *out, const char *header,
+                                     GPtrArray *entries)
+{
+    if (!header) {
+        return;
+    }
+
+    g_string_append_printf(out, "== %s", header);
+    if (!entries || entries->len == 0) {
+        g_string_append(out, " (empty) ==\n\n");
+        return;
+    }
+    g_string_append(out, " ==\n");
+
+    GArray *has_more = g_array_new(false, true, sizeof(gboolean));
+    g_array_set_size(has_more, 1);
+    g_array_index(has_more, gboolean, 0) = false;
+
+    for (guint i = 0; i < entries->len; i++) {
+        MemoryMapLine *line = g_ptr_array_index(entries, i);
+        int level = MAX(line->level, 1);
+        gboolean last = true;
+
+        for (guint j = i + 1; j < entries->len; j++) {
+            MemoryMapLine *next = g_ptr_array_index(entries, j);
+            if (next->level < level) {
+                break;
+            }
+            if (next->level == level) {
+                last = false;
+                break;
+            }
+        }
+
+        if ((guint)level >= has_more->len) {
+            guint old_len = has_more->len;
+            g_array_set_size(has_more, level + 1);
+            for (guint idx = old_len; idx < has_more->len; idx++) {
+                g_array_index(has_more, gboolean, idx) = false;
+            }
+        } else {
+            for (guint idx = level + 1; idx < has_more->len; idx++) {
+                g_array_index(has_more, gboolean, idx) = false;
+            }
+        }
+
+        for (int depth = 1; depth < level; depth++) {
+            g_string_append(out,
+                            g_array_index(has_more, gboolean, depth)
+                                ? "|   "
+                                : "    ");
+        }
+
+        g_string_append(out, last ? "`- " : "|- ");
+        g_string_append(out, line->text);
+        g_string_append_c(out, '\n');
+
+        g_array_index(has_more, gboolean, level) = !last;
+    }
+
+    g_array_unref(has_more);
+    g_string_append_c(out, '\n');
+    g_ptr_array_set_size(entries, 0);
+}
+
+HumanReadableText *qmp_query_memory_map(bool has_flatview, bool flatview,
+                                        bool has_dispatch_tree,
+                                        bool dispatch_tree,
+                                        bool has_owner, bool owner,
+                                        bool has_disabled, bool disabled,
+                                        Error **errp)
+{
+    g_autoptr(GString) cmd = g_string_new("info mtree");
+    g_autofree char *raw_text = NULL;
+    g_autoptr(GString) pretty = NULL;
+    char **lines = NULL;
+    g_autofree char *header = NULL;
+    g_autoptr(GPtrArray) entries =
+        g_ptr_array_new_with_free_func((GDestroyNotify)memory_map_line_free);
+
+    if (has_flatview && flatview) {
+        g_string_append(cmd, " -f");
+    }
+    if (has_dispatch_tree && dispatch_tree) {
+        g_string_append(cmd, " -d");
+    }
+    if (has_owner && owner) {
+        g_string_append(cmd, " -o");
+    }
+    if (has_disabled && disabled) {
+        g_string_append(cmd, " -D");
+    }
+
+    raw_text = qmp_human_monitor_command(cmd->str, false, 0, errp);
+    if (!raw_text) {
+        return NULL;
+    }
+
+    for (char *p = raw_text; *p; p++) {
+        if (*p == '\r') {
+            memmove(p, p + 1, strlen(p + 1) + 1);
+            p--;
+        }
+    }
+
+    pretty = g_string_new("");
+    lines = g_strsplit(raw_text, "\n", -1);
+
+    for (int i = 0; lines && lines[i]; i++) {
+        char *line = lines[i];
+        if (!line || line[0] == '\0') {
+            continue;
+        }
+
+        int leading = 0;
+        while (line[leading] == ' ') {
+            leading++;
+        }
+
+        if (leading == 0) {
+            memory_map_flush_section(pretty, header, entries);
+            g_clear_pointer(&header, g_free);
+            header = g_strdup(line);
+            continue;
+        }
+
+        MemoryMapLine *entry = g_new0(MemoryMapLine, 1);
+        entry->level = MAX(leading / 2, 1);
+        entry->text = g_strdup(line + leading);
+        g_ptr_array_add(entries, entry);
+    }
+
+    memory_map_flush_section(pretty, header, entries);
+    g_clear_pointer(&header, g_free);
+
+    if (lines) {
+        g_strfreev(lines);
+    }
+
+    return human_readable_text_from_str(g_steal_pointer(&pretty));
 }
 
 bool memory_region_init_ram(MemoryRegion *mr,
