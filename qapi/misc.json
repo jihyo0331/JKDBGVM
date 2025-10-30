@@ -635,11 +635,12 @@
             
 ##
 # @vcpu-set-throttle:
-#   vCPU 실행 듀티사이클을 런타임에 설정합니다.
 #
-# @cpu: 특정 vCPU 인덱스, 모든 vCPU면 -1
-# @percent: 0..100 (100=제한 없음)
-# @period-ms: 주기(ms)
+# Control throttling of virtual CPU execution.
+#
+# @cpu: Target vCPU index, or -1 to apply the setting to every vCPU.
+# @percent: Allowed run percentage (0..100, where 100 disables throttling).
+# @period-ms: Throttling period in milliseconds (1..1000).
 ##
 { 'command': 'vcpu-set-throttle', 
   'data': { 'cpu': 'int', 'percent': 'int', 'period-ms': 'int' } }
@@ -682,6 +683,10 @@
 # @virtual-range: (optional) When provided, only writes whose virtual address
 #                 is within the inclusive range are logged.
 #
+# @virtual-page-range: (optional) When provided, only writes whose virtual page
+#                      number is within the inclusive range are logged.  Cannot
+#                      be used together with @virtual-range.
+#
 # Since: 9.1
 ##
 { 'command': 'sfmmu',
@@ -705,6 +710,10 @@
 # @virtual-range: (optional) When provided, only writes whose virtual address
 #                 is within the inclusive range are logged.
 #
+# @virtual-page-range: (optional) When provided, only writes whose virtual page
+#                      number is within the inclusive range are logged.  Cannot
+#                      be used together with @virtual-range.
+#
 # Since: 9.1
 ##
 { 'command': 'ssmmu',
@@ -723,11 +732,15 @@
 ##
 # @wmmu:
 #
-# Enable logging of both fast-path and slow-path MMU writes to a log file
-# located at ../vm/mmu.log (relative to the QEMU working directory).
+# Enable logging of both fast-path and slow-path MMU writes to the host log
+# file defined by MMU_LOG_FILE_PATH and to the QEMU log.
 #
 # @virtual-range: (optional) When provided, only writes whose virtual address
 #                 is within the inclusive range are logged.
+#
+# @virtual-page-range: (optional) When provided, only writes whose virtual page
+#                      number is within the inclusive range are logged.  Cannot
+#                      be used together with @virtual-range.
 #
 # Since: 9.1
 ##
@@ -742,6 +755,10 @@
 #
 # @virtual-range: (optional) When provided, only writes whose virtual address
 #                 is within the inclusive range are logged.
+#
+# @virtual-page-range: (optional) When provided, only writes whose virtual page
+#                      number is within the inclusive range are logged.  Cannot
+#                      be used together with @virtual-range.
 #
 # Since: 9.1
 ##
